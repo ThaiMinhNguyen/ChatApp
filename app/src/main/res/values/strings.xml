@@ -3,4 +3,10 @@
     <string name="splash_icon">Splash Icon</string>
     <string name="email_hint">yourname@gmail.com</string>
     <string name="password_hint">********</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="agree_terms">Tôi đồng ý với các chính sách và điều khoản</string>
+    <string name="already_have_account">Đã có tài khoản? </string>
+    <string name="sign_in_now">Đăng nhập ngay</string>
+
 </resources>
