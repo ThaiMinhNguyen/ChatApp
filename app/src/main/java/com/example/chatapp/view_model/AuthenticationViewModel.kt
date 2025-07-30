@@ -4,6 +4,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.chatapp.domain.data.User
 import com.example.chatapp.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -26,6 +27,9 @@ class AuthenticationViewModel @Inject constructor(
 
     private val _isAllFilled = MutableStateFlow(false)
     val isAllFilled get() = _isAllFilled
+
+    private val _user = MutableStateFlow<User?>(null)
+    val user get() = _user
 
     fun onEmailChange(email: String){
         _email.value = email
@@ -63,6 +67,7 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.signInWithEmailAndPassword(email.value, password.value)
                 .onSuccess { user ->
+                    _user.value = user
                     Log.d("MyLog - AuthViewModel", "Sign-in successful: ${user.displayName}")
                 }
                 .onFailure { exception ->
@@ -81,6 +86,14 @@ class AuthenticationViewModel @Inject constructor(
                     Log.e("MyLog - AuthViewModel", "Sign-up failed: ${exception.message}")
                 }
         }
+    }
+
+    // Expose auth state for MainActivity
+    fun getCurrentUser() = authRepository.getCurrentUser()
+    
+    fun signOut() {
+        _user.value = null
+        authRepository.signOut()
     }
 
 }

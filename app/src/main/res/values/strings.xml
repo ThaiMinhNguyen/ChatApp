@@ -8,5 +8,8 @@
     <string name="agree_terms">Tôi đồng ý với các chính sách và điều khoản</string>
     <string name="already_have_account">Đã có tài khoản? </string>
     <string name="sign_in_now">Đăng nhập ngay</string>
+    <string name="chat_menu">Chat</string>
+    <string name="friends_menu">Friends</string>
+    <string name="profile_menu">Profile</string>
 
 </resources>

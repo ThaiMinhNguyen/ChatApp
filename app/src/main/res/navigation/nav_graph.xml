@@ -16,4 +16,10 @@
         android:name="com.example.chatapp.ui.sign_up.SignUpFragment"
         android:label="SignUpFragment"
         tools:layout="@layout/sign_up_screen"/>
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.chatapp.ui.home_screen.HomeFragment"
+        android:label="HomeFragment"
+        tools:layout="@layout/home_screen"/>
 </navigation>
