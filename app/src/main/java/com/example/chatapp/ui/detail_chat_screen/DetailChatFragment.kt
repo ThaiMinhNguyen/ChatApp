@@ -1,10 +1,14 @@
 package com.example.chatapp.ui.detail_chat_screen
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chatapp.databinding.DetailChatScreenBinding
@@ -21,6 +25,14 @@ class DetailChatFragment : Fragment() {
     private lateinit var messageAdapter: MessageListAdapter
     private lateinit var conversationId: String
 
+    private val imgPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()){
+        if (it != null) {
+            Log.d("MyLog - PhotoPicker", "Selected URI: $it")
+        } else {
+            Log.d("MyLog - PhotoPicker", "No media selected")
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -35,13 +47,25 @@ class DetailChatFragment : Fragment() {
         
         val args: DetailChatFragmentArgs by navArgs()
         conversationId = args.chatConversationId
-        
+        setUpView()
         setUpRecyclerView()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun setUpView() {
+        binding.apply {
+            btnAttachment.setOnClickListener {
+                imgPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+            }
+
+            ivBack.setOnClickListener {
+                findNavController().popBackStack()
+            }
+        }
     }
 
     private fun setUpRecyclerView() {
