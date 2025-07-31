@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chatapp.databinding.HomeScreenBinding
 import com.example.chatapp.domain.data.ChatOverview
@@ -34,7 +35,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun setUpRecyclerView() {
-        chatListAdapter = ChatListAdapter()
+        chatListAdapter = ChatListAdapter({chatId->navigateToDetailChat(chatId)})
         binding.rvChatList.apply {
             adapter = chatListAdapter
             layoutManager = LinearLayoutManager(context).apply {
@@ -42,6 +43,7 @@ class HomeFragment : Fragment() {
             }
             setHasFixedSize(true)
         }
+
 
         //For testing, using dummy data
         val dummyData = List(20) { index ->
@@ -60,6 +62,11 @@ class HomeFragment : Fragment() {
 
         chatListAdapter.submitList(dummyData.sortedBy { it.lastMessageTime }.reversed())
 
+    }
+
+    private fun navigateToDetailChat(conversationId: String) {
+        val action = HomeFragmentDirections.actionHomeFragmentToDetailChatFragment(conversationId)
+        findNavController().navigate(action)
     }
 
     override fun onDestroyView() {

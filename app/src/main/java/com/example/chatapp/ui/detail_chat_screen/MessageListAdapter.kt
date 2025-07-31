@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import com.bumptech.glide.Glide
 import com.example.chatapp.databinding.ItemChatMessageBinding
 import com.example.chatapp.domain.data.Message
+import com.example.chatapp.utils.DateUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -35,11 +36,11 @@ class MessageListAdapter(
                 if (isSent) {
                     tvSentMessage.text = message.content
                     tvSentTime.text = formatTime(message.timestamp)
-                    tvSentTime.visibility = if (showTime) View.VISIBLE else View.INVISIBLE
+                    tvSentTime.visibility = if (showTime) View.VISIBLE else View.GONE
                 } else {
                     tvReceivedMessage.text = message.content
                     tvReceivedTime.text = formatTime(message.timestamp)
-                    tvReceivedTime.visibility = if (showTime) View.VISIBLE else View.INVISIBLE
+                    tvReceivedTime.visibility = if (showTime) View.VISIBLE else View.GONE
                     // Load avatar
                     Glide.with(civSenderAvatar)
                         .load(message.senderAvatar)
@@ -92,6 +93,15 @@ class MessageListAdapter(
     }
 
     private fun formatDate(timestamp: Long): String {
+        val dateCalendar = Calendar.getInstance().apply { timeInMillis = timestamp }
+        if(DateUtils.isToday(dateCalendar)){
+            return "Hôm nay"
+        }
+
+        if(DateUtils.isYesterday(dateCalendar)){
+            return "Hôm qua"
+        }
+
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         return sdf.format(Date(timestamp))
     }

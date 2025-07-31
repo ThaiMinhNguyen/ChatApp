@@ -21,5 +21,27 @@
         android:id="@+id/homeFragment"
         android:name="com.example.chatapp.ui.home_screen.HomeFragment"
         android:label="HomeFragment"
-        tools:layout="@layout/home_screen"/>
+        tools:layout="@layout/home_screen">
+        <action
+            android:id="@+id/action_homeFragment_to_detailChatFragment"
+            app:destination="@id/detailChatFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim">
+            <argument
+                android:name="chatConversationId"
+                app:argType="string" />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/detailChatFragment"
+        android:name="com.example.chatapp.ui.detail_chat_screen.DetailChatFragment"
+        android:label="DetailChatFragment"
+        tools:layout="@layout/detail_chat_screen">
+        <argument
+            android:name="chatConversationId"
+            app:argType="string"
+            />
+    </fragment>
+
 </navigation>

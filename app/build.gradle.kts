@@ -81,7 +81,6 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
 
     //Circle Image View
-    implementation("de.hdodenhof:circleimageview:3.1.0")
-
+    implementation(libs.circleimageview)
 
 }

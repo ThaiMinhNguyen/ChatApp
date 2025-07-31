@@ -7,11 +7,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.chatapp.databinding.ItemChatBinding
 import com.example.chatapp.domain.data.ChatOverview
 
-class ChatListAdapter : ListAdapter<ChatOverview, ChatListAdapter.ChatViewHolder>(ChatOverviewDiffCallback()) {
+class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatOverview, ChatListAdapter.ChatViewHolder>(ChatOverviewDiffCallback()) {
 
     inner class ChatViewHolder(private val binding: ItemChatBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(chatOverview: ChatOverview) {
             with(binding){
+                root.setOnClickListener {
+                    onItemClick(chatOverview.conversationId)
+                }
+
                 tvUserName.text = chatOverview.contactName
                 tvLastMessage.text = chatOverview.lastMessage
                 tvTime.text = formatTime(chatOverview.lastMessageTime)

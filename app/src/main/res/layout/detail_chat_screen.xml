@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:fitsSystemWindows="true"
+    android:background="@color/bg_gray">
 
     <LinearLayout
         android:id="@+id/llHeader"
@@ -34,7 +35,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginStart="12dp"
-            app:civ_border_color="@android:color/white"
+            app:civ_border_color="@color/primary_blue"
             app:civ_border_width="2dp"
             tools:src="@drawable/ic_user_mail" />
 
