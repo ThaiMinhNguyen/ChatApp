@@ -31,6 +31,9 @@ class AuthenticationViewModel @Inject constructor(
     private val _user = MutableStateFlow<User?>(null)
     val user get() = _user
 
+    private val _loading = MutableStateFlow(false)
+    val loading get() = _loading
+
     fun onEmailChange(email: String){
         _email.value = email
     }
@@ -64,6 +67,7 @@ class AuthenticationViewModel @Inject constructor(
     }
 
     fun signIn(){
+        _loading.value = true
         viewModelScope.launch {
             authRepository.signInWithEmailAndPassword(email.value, password.value)
                 .onSuccess { user ->
@@ -73,6 +77,7 @@ class AuthenticationViewModel @Inject constructor(
                 .onFailure { exception ->
                     Log.e("MyLog - AuthViewModel", "Sign-in failed: ${exception.message}")
                 }
+            _loading.value = false
         }
     }
 
@@ -80,6 +85,7 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.signUpWithEmailAndPassword(email.value, password.value, fullName.value)
                 .onSuccess { user ->
+                    _user.value = user
                     Log.d("MyLog - AuthViewModel", "Sign-up successful: ${user.displayName}")
                 }
                 .onFailure { exception ->
@@ -88,7 +94,6 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
-    // Expose auth state for MainActivity
     fun getCurrentUser() = authRepository.getCurrentUser()
     
     fun signOut() {

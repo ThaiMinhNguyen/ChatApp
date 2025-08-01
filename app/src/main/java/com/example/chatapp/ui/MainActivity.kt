@@ -1,11 +1,16 @@
 package com.example.chatapp.ui
 
+import android.os.Build
 import android.os.Bundle
+import android.view.View
+import android.view.ViewTreeObserver
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -24,6 +29,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navController: androidx.navigation.NavController
 
     private val authViewModel: AuthenticationViewModel by viewModels()
+    private var isBottomNavVisibleByDestination: Boolean = false
+    private var isKeyboardVisible: Boolean = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +42,23 @@ class MainActivity : AppCompatActivity() {
         }
         setUpView()
         setUpBottomNavigation()
+        setUpKeyboardListener()
         observeAuthState()
+        setUpObserver()
+    }
+
+    private fun setUpObserver() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                authViewModel.loading.collect{
+                    if (it) {
+                        binding.llProgressBar.visibility = android.view.View.VISIBLE
+                    } else {
+                        binding.llProgressBar.visibility = android.view.View.GONE
+                    }
+                }
+            }
+        }
     }
 
     private fun setUpView(){
@@ -49,11 +72,28 @@ class MainActivity : AppCompatActivity() {
         navController = navHostFragment.navController
         binding.bottomNavigation.setupWithNavController(navController)
         navController.addOnDestinationChangedListener{_, destination, _ ->
-            when(destination.id) {
-                R.id.homeFragment, R.id.friendFragment, R.id.profileFragment -> binding.bottomNavCard.visibility = android.view.View.VISIBLE
-                else -> binding.bottomNavCard.visibility = android.view.View.GONE
+            isBottomNavVisibleByDestination = when(destination.id) {
+                R.id.homeFragment, R.id.friendFragment, R.id.profileFragment -> true
+                else -> false
             }
+            updateBottomNavVisibility()
         }
+    }
+
+    private fun setUpKeyboardListener() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            if (isKeyboardVisible != imeVisible) {
+                isKeyboardVisible = imeVisible
+                updateBottomNavVisibility()
+            }
+            insets
+        }
+    }
+
+    private fun updateBottomNavVisibility() {
+        val shouldShowBottomNav = isBottomNavVisibleByDestination && !isKeyboardVisible
+        binding.bottomNavCard.visibility = if (shouldShowBottomNav) View.VISIBLE else View.GONE
     }
 
     private fun observeAuthState() {
