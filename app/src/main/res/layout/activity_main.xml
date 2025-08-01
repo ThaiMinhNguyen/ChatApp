@@ -17,6 +17,8 @@
         android:translationZ="10dp"
         android:visibility="gone"
         tools:visibility="visible"
+        android:clickable="true"
+        android:focusable="true"
         >
         <ProgressBar
             android:id="@+id/progressBar"
