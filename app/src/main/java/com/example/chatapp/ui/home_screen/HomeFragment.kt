@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.chatapp.R
 import com.example.chatapp.databinding.HomeScreenBinding
 import com.example.chatapp.domain.data.ChatOverview
 import com.example.chatapp.domain.data.ChatSearchResult
@@ -88,6 +89,10 @@ class HomeFragment : Fragment() {
         binding.tvCancel.setOnClickListener{
             binding.etSearch.text?.clear()
             switchToNormalMode()
+        }
+
+        binding.btnCreateNewChat.setOnClickListener {
+            findNavController().navigate(R.id.newChatFragment)
         }
     }
 

@@ -1,6 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="@android:color/white"/>
-    <corners android:radius="50dp"/> <!-- Round shape -->
-    <stroke android:color="@android:color/darker_gray" android:width="2dp"/>
-</shape>
+<selector xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item
+        android:drawable="@drawable/radio_checked"
+        android:state_checked="true"
+        android:state_pressed="true" />
+    <item
+        android:drawable="@drawable/radio_unchecked"
+        android:state_pressed="true" />
+    <item
+        android:drawable="@drawable/radio_checked"
+        android:state_checked="true" />
+    <item
+        android:drawable="@drawable/radio_unchecked" />
+</selector>

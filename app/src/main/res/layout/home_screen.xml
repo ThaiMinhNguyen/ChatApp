@@ -35,16 +35,25 @@
                 android:textColor="@android:color/white"
                 android:textSize="30sp" />
 
-            <ImageView
-                android:id="@+id/ivCreateNewChat"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCreateNewChat"
+                style="@style/Widget.Material3.Button.IconButton"
                 android:layout_width="35dp"
                 android:layout_height="35dp"
-                android:background="@drawable/bg_circle_image"
-                android:contentDescription="Search"
-                android:padding="5dp"
-                android:src="@drawable/ic_create_new_chat"
-                app:tint="@color/primary_blue"
-                />
+                android:backgroundTint="@color/white"
+                android:contentDescription="Create new chat"
+                app:icon="@drawable/ic_create_new_chat"
+                app:iconTint="@color/primary_blue"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="20dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="5dp" />
 
         </LinearLayout>
 
