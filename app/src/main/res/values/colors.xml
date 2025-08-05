@@ -13,4 +13,5 @@
     <color name="icon_gray">#D2D2D2</color>
     <color name="icon_dark_gray">#999999</color>
     <color name="bg_gray">#F6F6F6</color>
+    <color name="red">#C92323</color>
 </resources>

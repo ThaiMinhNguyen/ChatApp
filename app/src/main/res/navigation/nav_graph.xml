@@ -56,5 +56,17 @@
         android:label="FriendFragment"
         tools:layout="@layout/friend_screen"/>
 
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.chatapp.ui.profile_screen.ProfileFragment"
+        android:label="ProfileFragment"
+        tools:layout="@layout/profile_screen"/>
+
+    <fragment
+        android:id="@+id/detailProfileFragment"
+        android:name="com.example.chatapp.ui.detail_profile_screen.DetailProfileFragment"
+        android:label="DetailProfileFragment"
+        tools:layout="@layout/detail_profile_screen"/>
+
 
 </navigation>

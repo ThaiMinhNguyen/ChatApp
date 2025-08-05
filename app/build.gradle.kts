@@ -83,4 +83,5 @@ dependencies {
     //Circle Image View
     implementation(libs.circleimageview)
 
+    implementation("com.github.dhaval2404:imagepicker:2.1")
 }

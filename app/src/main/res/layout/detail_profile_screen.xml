@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <LinearLayout
+        android:id="@+id/llHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingVertical="40dp"
+        android:background="@drawable/bg_gradient"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="8dp"
+            >
+
+            <ImageView
+                android:id="@+id/ivBack"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_back_arrow"
+                android:contentDescription="Back"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                app:tint="@android:color/white"
+                android:layout_marginEnd="16dp" />
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/lato_bold"
+                android:text="Chỉnh sửa thông tin"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/tvSave"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lưu"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:fontFamily="@font/lato_regular"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cvChatList"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        style="@style/CustomCardViewStyle"
+        android:layout_marginTop="-20dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/llHeader">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="20dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="48dp"
+                >
+                
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_alignTop="@+id/cvProfileImage"
+                    android:layout_alignStart="@+id/cvProfileImage"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginStart="-30dp"
+                    android:background="@drawable/bg_bubble"
+                     />
+                    
+                <View
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_alignTop="@+id/cvProfileImage"
+                    android:layout_alignEnd="@+id/cvProfileImage"
+                    android:layout_marginTop="40dp"
+                    android:layout_marginEnd="-25dp"
+                    android:background="@drawable/bg_bubble"
+                    />
+                    
+                <View
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_alignBottom="@+id/cvProfileImage"
+                    android:layout_alignStart="@+id/cvProfileImage"
+                    android:layout_marginBottom="30dp"
+                    android:layout_marginStart="-20dp"
+                    android:background="@drawable/bg_bubble"
+                    />
+                
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cvProfileImage"
+                    android:layout_width="140dp"
+                    android:layout_height="140dp"
+                    app:strokeWidth="0dp"
+                    android:elevation="12dp"
+                    app:cardCornerRadius="100dp"
+                    android:layout_centerInParent="true">
+                    <ImageView
+                        android:id="@+id/ivAvatar"
+                        android:contentDescription="Avatar Image"
+                        android:layout_height="match_parent"
+                        android:layout_width="match_parent"
+                        android:src="@drawable/profile_preview"
+                        android:scaleType="centerCrop"/>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cvProfileEdit"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:elevation="0dp"
+                    android:translationZ="1dp"
+                    app:cardCornerRadius="100dp"
+                    app:strokeColor="@android:color/white"
+                    app:strokeWidth="2dp"
+                    android:layout_alignBottom="@+id/cvProfileImage"
+                    android:layout_alignEnd="@+id/cvProfileImage"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
+                    <ImageView
+                        android:id="@+id/ivEditAvatar"
+                        android:contentDescription="Avatar Image Edit"
+                        android:layout_height="match_parent"
+                        android:layout_width="match_parent"
+                        android:background="@color/primary_blue"
+                        android:src="@drawable/ic_camera"
+                        android:scaleType="center"
+                        app:tint="@android:color/white"/>
+                </com.google.android.material.card.MaterialCardView>
+            </RelativeLayout>
+
+            <!-- Full Name Field -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="32dp"
+                android:paddingHorizontal="32dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="HỌ VÀ TÊN"
+                    android:textColor="@color/icon_dark_gray"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/lato_regular"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <EditText
+                        android:id="@+id/etFullName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Awesome Chat"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/lato_regular"
+                        android:background="@android:color/transparent"
+                        android:padding="0dp" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_user_register"
+                        app:tint="@color/primary_blue" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/bg_gray"
+                    android:layout_marginTop="8dp" />
+
+            </LinearLayout>
+
+            <!-- Phone Number Field -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="32dp"
+                android:paddingHorizontal="32dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SỐ ĐIỆN THOẠI"
+                    android:textColor="@color/icon_dark_gray"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/lato_regular"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <EditText
+                        android:id="@+id/etPhoneNumber"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="091 234 5678"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/lato_regular"
+                        android:background="@android:color/transparent"
+                        android:inputType="phone"
+                        android:padding="0dp" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_phone"
+                        app:tint="@color/primary_blue" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/bg_gray"
+                    android:layout_marginTop="8dp" />
+
+            </LinearLayout>
+
+            <!-- Birthday Field -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="32dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="NGÀY SINH"
+                    android:textColor="@color/icon_dark_gray"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/lato_regular"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+
+                    <EditText
+                        android:id="@+id/etBirthday"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/lato_regular"
+                        android:background="@android:color/transparent"
+                        android:inputType="date"
+                        android:text="08/04/1992"
+                        android:padding="0dp" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_birthday"
+                        app:tint="@color/primary_blue" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/bg_gray"
+                    android:layout_marginTop="8dp" />
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

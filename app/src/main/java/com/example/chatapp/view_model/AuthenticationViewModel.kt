@@ -1,7 +1,6 @@
 package com.example.chatapp.view_model
 
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chatapp.domain.data.User
@@ -94,7 +93,7 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
-    fun getCurrentUser() = authRepository.getCurrentUser()
+    fun getCurrentFirebaseUser() = authRepository.getCurrentUser()
     
     fun signOut() {
         _user.value = null
