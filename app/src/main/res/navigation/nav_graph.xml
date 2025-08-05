@@ -50,5 +50,11 @@
         android:label="NewChatFragment"
         tools:layout="@layout/new_chat_screen"
         />
+    <fragment
+        android:id="@+id/friendFragment"
+        android:name="com.example.chatapp.ui.friend_screen.FriendFragment"
+        android:label="FriendFragment"
+        tools:layout="@layout/friend_screen"/>
+
 
 </navigation>

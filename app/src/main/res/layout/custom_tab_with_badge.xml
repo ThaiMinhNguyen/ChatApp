@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:paddingHorizontal="8dp">
+
+    <TextView
+        android:id="@+id/tvTabText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="YÊU CẦU"
+        android:fontFamily="@font/lato_bold"
+        android:textSize="14sp"
+        android:textColor="@color/text_gray" />
+
+    <TextView
+        android:id="@+id/tvBadge"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_unread_badge"
+        android:gravity="center"
+        android:text="4"
+        android:textColor="@color/white"
+        android:textSize="10sp"
+        android:fontFamily="@font/lato_bold" />
+
+</LinearLayout>
