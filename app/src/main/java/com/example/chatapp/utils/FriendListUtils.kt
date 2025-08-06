@@ -5,6 +5,10 @@ import com.example.chatapp.domain.data.People
 
 object FriendListUtils {
 
+    fun createListWithoutHeaders(people: List<People>): List<FriendListItem> {
+        return people.map { FriendListItem.PersonItem(it) }
+    }
+
     fun createListWithHeaders(people: List<People>, tabIndex: Int): List<FriendListItem> {
         val result = mutableListOf<FriendListItem>()
         

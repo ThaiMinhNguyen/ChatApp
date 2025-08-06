@@ -33,6 +33,7 @@ class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatListI
                     onItemClick(chatOverview.conversationId)
                 }
 
+
                 tvUserName.text = chatOverview.contactName
                 tvLastMessage.text = chatOverview.lastMessage
                 tvTime.text = formatTime(chatOverview.lastMessageTime)
@@ -51,10 +52,14 @@ class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatListI
             val now = System.currentTimeMillis()
             val diff = now - timestamp
 
+            val min = binding.root.context.getString(R.string.min_unit)
+            val hour = binding.root.context.getString(R.string.hour_unit)
+            val recently = binding.root.context.getString(R.string.recently)
+
             return when {
-                diff < 60_000 -> "Vừa xong"
-                diff < 3600_000 -> "${diff / 60_000}p"
-                diff < 86400_000 -> "${diff / 3600_000}h"
+                diff < 60_000 -> recently
+                diff < 3600_000 -> "${diff / 60_000}$min"
+                diff < 86400_000 -> "${diff / 3600_000}${hour}"
                 else -> "dd/MM"
             }
         }
@@ -75,7 +80,7 @@ class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatListI
                     .placeholder(R.drawable.ic_user_mail)
                     .into(civAvatar)
 
-                tvMessageCount.text = searchResult.messageMatch.toString() + " tin nhắn khớp"
+                tvMessageCount.text = searchResult.messageMatch.toString() + " " + root.context.getString(R.string.chat_result_found)
 
             }
         }

@@ -34,17 +34,18 @@
             android:id="@+id/btnAction"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Kết bạn"
-            android:textAllCaps="false"
-            android:fontFamily="@font/lato_regular"
-            android:textSize="14sp"
             android:background="@drawable/btn_friend_request"
-            android:textColor="@color/white"
-            android:padding="4dp"
+            android:fontFamily="@font/lato_regular"
             android:insetLeft="0dp"
             android:insetTop="0dp"
             android:insetRight="0dp"
             android:insetBottom="0dp"
-            android:minHeight="0dp" />
+            android:minHeight="0dp"
+            android:padding="4dp"
+            android:text="@string/add_friend"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            tools:ignore="TouchTargetSizeCheck" />
 
 </LinearLayout>

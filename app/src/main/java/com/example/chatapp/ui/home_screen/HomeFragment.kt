@@ -124,7 +124,6 @@ class HomeFragment : Fragment() {
 
     private fun switchToSearchMode() {
         binding.tvCancel.visibility = View.VISIBLE
-
     }
 
 

@@ -1,10 +1,13 @@
 package com.example.chatapp.ui.friend_screen
 
+import android.content.Context
 import android.os.Bundle
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -41,21 +44,33 @@ class FriendFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setUpRecyclerView()
+        setUpListener()
         setUpTab()
+        setUpSearchListener()
+    }
+
+    private fun setUpListener() {
+        binding.tvCancel.setOnClickListener {
+            switchToNormalMode()
+            binding.etSearch.text?.clear()
+        }
+
     }
 
     private fun setUpTab(){
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText("BẠN BÈ"))
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText("TẤT CẢ"))
+        val friends = requireContext().getString(R.string.friend)
+        val all = requireContext().getString(R.string.all)
+        binding.tlFriend.addTab(binding.tlFriend.newTab().setText(friends))
+        binding.tlFriend.addTab(binding.tlFriend.newTab().setText(all))
 
         val customTab = LayoutInflater.from(requireContext())
             .inflate(R.layout.custom_tab_with_badge, null)
 
-        val tab = binding.tabLayout.newTab()
+        val tab = binding.tlFriend.newTab()
         tab.customView = customTab
-        binding.tabLayout.addTab(tab)
+        binding.tlFriend.addTab(tab)
 
-        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+        binding.tlFriend.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 currentTab = tab?.position ?: 0
                 updateTabTextColors()
@@ -93,8 +108,8 @@ class FriendFragment : Fragment() {
     }
 
     private fun updateTabTextColors() {
-        for (i in 0 until binding.tabLayout.tabCount) {
-            val tab = binding.tabLayout.getTabAt(i)
+        for (i in 0 until binding.tlFriend.tabCount) {
+            val tab = binding.tlFriend.getTabAt(i)
             val customView = tab?.customView
 
             if (customView != null) {
@@ -109,7 +124,7 @@ class FriendFragment : Fragment() {
     }
 
     fun updateBadgeCount(count: Int) {
-        val tab = binding.tabLayout.getTabAt(2)
+        val tab = binding.tlFriend.getTabAt(2)
         val customView = tab?.customView
 
         if (customView != null) {
@@ -169,6 +184,77 @@ class FriendFragment : Fragment() {
             handleTabSelection()
         }
     }
+
+    private fun setUpSearchListener(){
+        binding.etSearch.setOnFocusChangeListener{ _, hasFocus ->
+            if (hasFocus) {
+                switchToSearchMode()
+            } else {
+                hideKeyboard()
+            }
+        }
+
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+            }
+
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val query = s.toString().trim()
+                if (query.isNotEmpty()) {
+                    val filteredList = peopleList.filter { it.isFriend && it.user.displayName?.contains(query, ignoreCase = true) == true }
+                    if (filteredList.isEmpty()) {
+                        onNoResultsFound()
+                    } else {
+                        binding.llNoSearchResult.visibility = View.GONE
+                        friendAdapter.submitList(FriendListUtils.createListWithoutHeaders(filteredList))
+                    }
+                } else {
+                    binding.llNoSearchResult.visibility = View.GONE
+                    val filteredList = peopleList.filter { it.isFriend  }
+                    friendAdapter.submitList(FriendListUtils.createListWithoutHeaders(filteredList))
+                }
+            }
+        })
+    }
+
+    private fun hideKeyboard() {
+        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        imm?.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
+    }
+
+    private fun switchToSearchMode() {
+        submitAllFriends()
+        binding.tvCancel.visibility = View.VISIBLE
+        binding.tlFriend.visibility = View.GONE
+        binding.tvSearchTitle.visibility = View.VISIBLE
+    }
+
+    private fun submitAllFriends() {
+        val friendsList = peopleList.filter { it.isFriend }
+        binding.llNoSearchResult.visibility = View.GONE
+        friendAdapter.submitList(FriendListUtils.createListWithoutHeaders(friendsList))
+    }
+
+    private fun switchToNormalMode() {
+        binding.tvCancel.visibility = View.GONE
+        binding.tlFriend.visibility = View.VISIBLE
+        binding.tvSearchTitle.visibility = View.GONE
+        binding.llNoSearchResult.visibility = View.GONE
+        binding.etSearch.clearFocus()
+        handleTabSelection()
+    }
+
+    private fun onNoResultsFound(){
+        friendAdapter.submitList(null)
+        binding.llNoSearchResult.visibility = View.VISIBLE
+    }
+
+
 
     override fun onDestroyView() {
         super.onDestroyView()

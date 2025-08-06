@@ -30,7 +30,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_back_arrow"
-                android:contentDescription="Back"
+                android:contentDescription="@string/back_btn_description"
                 app:tint="@android:color/white"
                 android:layout_marginEnd="16dp" />
 
@@ -40,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:fontFamily="@font/lato_bold"
-                android:text="Tạo tin nhắn"
+                android:text="@string/create_message"
                 android:textColor="@android:color/white"
                 android:textSize="20sp"
                 android:gravity="center" />
@@ -49,14 +49,15 @@
                 android:id="@+id/tvCancel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Hủy"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="@font/lato_regular"
+                android:padding="8dp"
+                android:text="@string/cancel"
                 android:textColor="@android:color/white"
                 android:textSize="16sp"
-                android:fontFamily="@font/lato_regular"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="8dp"
-                android:clickable="true"
-                android:focusable="true" />
+                tools:ignore="TouchTargetSizeCheck,TextContrastCheck" />
 
         </LinearLayout>
 
@@ -83,9 +84,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/lato_regular"
+                android:hint="@string/friend_search_hint"
                 android:inputType="text"
-                android:hint="Tìm kiếm bạn bè..."
-                android:textSize="16sp" />
+                android:textSize="16sp"
+                tools:ignore="VisualLintTextFieldSize,TextContrastCheck" />
 
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
@@ -112,13 +114,14 @@
                 android:id="@+id/tvFriendListHeader"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="DANH SÁCH BẠN BÈ"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="30dp"
+                android:layout_marginBottom="16dp"
                 android:fontFamily="@font/lato_bold"
+                android:text="@string/friend_list"
                 android:textColor="@color/icon_dark_gray"
                 android:textSize="13sp"
-                android:layout_marginTop="30dp"
-                android:layout_marginStart="20dp"
-                android:layout_marginBottom="16dp" />
+                tools:ignore="TextContrastCheck" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvFriendList"
@@ -168,7 +171,7 @@
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:layout_marginEnd="16dp"
-            android:contentDescription="Create Chat"
+            android:contentDescription="@string/create_chat_btn_description"
             app:icon="@drawable/ic_back_arrow"
             app:iconSize="24dp"
             app:iconTint="@android:color/white"

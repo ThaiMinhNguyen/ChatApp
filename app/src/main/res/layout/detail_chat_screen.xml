@@ -25,7 +25,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
+            android:contentDescription="@string/back_btn_description"
             android:padding="4dp"
             android:src="@drawable/ic_back_arrow"
             app:tint="@color/primary_blue" />
@@ -50,7 +50,8 @@
             android:textStyle="bold"
             android:text="Trần Hương Mai"
             android:textColor="@color/black"
-            android:textSize="18sp" />
+            android:textSize="18sp"
+            tools:ignore="HardcodedText" />
 
     </LinearLayout>
 
@@ -95,7 +96,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@drawable/bg_circle_grey"
-            android:contentDescription="Attachment"
+            android:contentDescription="@string/attachment_btn_description"
             android:padding="4dp"
             android:scaleType="center"
             android:src="@drawable/ic_chat_photo"
@@ -133,7 +134,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/lato_regular"
                 android:inputType="textMultiLine"
-                android:hint="Nhập tin nhắn..."
+                android:hint="@string/message_hint"
                 android:maxLines="4"
                 android:textSize="16sp" />
 
@@ -145,7 +146,7 @@
             android:layout_height="44dp"
             android:clickable="true"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="SendMessage"
+            android:contentDescription="@string/message_send_discription"
             android:padding="4dp"
             android:scaleType="center"
             android:src="@drawable/ic_send_message"

@@ -30,7 +30,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:fontFamily="@font/lato_bold"
-                android:text="Bạn bè"
+                android:text="@string/friend"
                 android:textColor="@android:color/white"
                 android:textSize="30sp" />
 
@@ -40,7 +40,7 @@
                 android:layout_width="35dp"
                 android:layout_height="35dp"
                 android:backgroundTint="@color/white"
-                android:contentDescription="Create new chat"
+                android:contentDescription="@string/new_friend_btn_description"
                 android:insetLeft="0dp"
                 android:insetTop="0dp"
                 android:insetRight="0dp"
@@ -52,7 +52,8 @@
                 app:iconGravity="textStart"
                 app:iconPadding="0dp"
                 app:iconSize="20dp"
-                app:iconTint="@color/primary_blue" />
+                app:iconTint="@color/primary_blue"
+                tools:ignore="TouchTargetSizeCheck" />
 
         </LinearLayout>
 
@@ -69,7 +70,6 @@
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-
                 android:layout_weight="1"
                 app:boxBackgroundColor="@android:color/white"
                 app:boxCornerRadiusBottomEnd="30dp"
@@ -86,9 +86,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/lato_regular"
-                    android:hint="Tìm kiếm bạn bè..."
+                    android:hint="@string/friend_search_hint"
                     android:inputType="text"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    tools:ignore="TextContrastCheck,VisualLintTextFieldSize" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -102,11 +103,12 @@
                 android:focusable="true"
                 android:fontFamily="@font/lato_regular"
                 android:gravity="center"
-                android:text="Hủy"
+                android:text="@string/cancel"
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:visibility="gone"
+                tools:ignore="TouchTargetSizeCheck,TextContrastCheck"
                 tools:visibility="visible" />
 
         </LinearLayout>
@@ -132,9 +134,26 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
+            <TextView
+                android:id="@+id/tvSearchTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/lato_bold"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="15dp"
+                android:text="@string/friend"
+                android:textAllCaps="true"
+                android:textColor="@color/icon_dark_gray"
+                android:textSize="15sp"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="@+id/cvChatList"
+                app:layout_constraintTop_toTopOf="@+id/cvChatList"
+                tools:ignore="TextContrastCheck"
+                tools:visibility="visible" />
+
             <com.google.android.material.tabs.TabLayout
                 android:layout_marginTop="5dp"
-                android:id="@+id/tabLayout"
+                android:id="@+id/tlFriend"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@android:color/white"
@@ -142,7 +161,9 @@
                 app:tabSelectedTextColor="@color/primary_blue"
                 app:tabTextColor="@color/text_gray"
                 app:tabMode="fixed"
-                app:tabGravity="fill" />
+                app:tabGravity="fill"
+                android:contentDescription="@string/tab_layout_description"
+                />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvPeopleList"
@@ -151,26 +172,13 @@
                 android:background="@android:color/transparent"
                 android:clipToPadding="false"
                 android:paddingHorizontal="16dp"
-                android:paddingTop="35dp"
+                android:paddingTop="10dp"
                 android:paddingBottom="16dp"
                 tools:listitem="@layout/item_friend_request" />
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/lato_bold"
-        android:paddingHorizontal="20dp"
-        android:paddingVertical="15dp"
-        android:text="BẠN BÈ"
-        android:textColor="@color/icon_dark_gray"
-        android:textSize="15sp"
-        android:visibility="gone"
-        app:layout_constraintStart_toStartOf="@+id/cvChatList"
-        app:layout_constraintTop_toTopOf="@+id/cvChatList"
-        tools:visibility="gone" />
 
 
     <LinearLayout
@@ -184,16 +192,18 @@
         android:gravity="center_horizontal"
         android:orientation="vertical"
         android:visibility="gone"
-        tools:visibility="gone">
+        tools:visibility="visible"
+        tools:ignore="UseCompoundDrawables">
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:contentDescription="@string/icon_search_not_found_description"
             android:src="@drawable/ic_search_not_found"
             />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Không tìm thấy kết quả phù hợp"
+            android:text="@string/result_not_found"
             android:textColor="@color/black"
             android:textSize="16sp"
             android:fontFamily="@font/lato_bold"

@@ -10,7 +10,8 @@
 
     <FrameLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        tools:ignore="UselessParent">
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/civSelectedFriendAvatar"
@@ -26,7 +27,7 @@
             android:layout_gravity="top|end"
             android:background="@drawable/bg_remove_friend"
             android:src="@drawable/ic_close"
-            android:contentDescription="Remove friend"
+            android:contentDescription="@string/remove_add_chat_descriptio"
             android:padding="2dp"
             app:tint="@color/primary_blue" />
 

@@ -3,8 +3,11 @@ package com.example.chatapp.ui.detail_chat_screen
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat.getString
 import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.chatapp.R
 import com.example.chatapp.databinding.ItemChatMessageBinding
 import com.example.chatapp.domain.data.Message
 import com.example.chatapp.utils.DateUtils
@@ -17,7 +20,7 @@ class MessageListAdapter(
     private val currentUserId: String
 ) : ListAdapter<Message, MessageListAdapter.MessageViewHolder>(MessageDiffCallback()) {
 
-    inner class MessageViewHolder(private val binding: ItemChatMessageBinding) : androidx.recyclerview.widget.RecyclerView.ViewHolder(binding.root) {
+    inner class MessageViewHolder(private val binding: ItemChatMessageBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(message: Message, showDateSeparator: Boolean, dateText: String?, showTime: Boolean) {
             with(binding) {
                 if (showDateSeparator && dateText != null) {
@@ -63,9 +66,11 @@ class MessageListAdapter(
     }
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
+        val today = getString(holder.itemView.context, R.string.today)
+        val yesterday = getString(holder.itemView.context, R.string.yesterday)
         val message = getItem(position)
         val showDateSeparator = shouldShowDateSeparator(position)
-        val dateText = if (showDateSeparator) formatDate(message.timestamp) else null
+        val dateText = if (showDateSeparator) formatDate(message.timestamp, today, yesterday) else null
         val showTime = shouldShowTime(position)
         holder.bind(message, showDateSeparator, dateText, showTime)
     }
@@ -92,14 +97,14 @@ class MessageListAdapter(
         return curr.senderId != next.senderId || !isSameDay(curr.timestamp, next.timestamp)
     }
 
-    private fun formatDate(timestamp: Long): String {
+    private fun formatDate(timestamp: Long, today: String, yesterday: String): String {
         val dateCalendar = Calendar.getInstance().apply { timeInMillis = timestamp }
         if(DateUtils.isToday(dateCalendar)){
-            return "Hôm nay"
+            return today
         }
 
         if(DateUtils.isYesterday(dateCalendar)){
-            return "Hôm qua"
+            return yesterday
         }
 
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())

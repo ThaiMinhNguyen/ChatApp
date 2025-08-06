@@ -31,7 +31,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:fontFamily="@font/lato_bold"
-                android:text="Tin nhắn"
+                android:text="@string/message"
                 android:textColor="@android:color/white"
                 android:textSize="30sp" />
 
@@ -41,19 +41,20 @@
                 android:layout_width="35dp"
                 android:layout_height="35dp"
                 android:backgroundTint="@color/white"
-                android:contentDescription="Create new chat"
+                android:contentDescription="@string/new_chat_btn_description"
+                android:insetLeft="0dp"
+                android:insetTop="0dp"
+                android:insetRight="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="5dp"
                 app:icon="@drawable/ic_create_new_chat"
-                app:iconTint="@color/primary_blue"
                 app:iconGravity="textStart"
                 app:iconPadding="0dp"
                 app:iconSize="20dp"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:insetLeft="0dp"
-                android:insetRight="0dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:padding="5dp" />
+                app:iconTint="@color/primary_blue"
+                tools:ignore="TouchTargetSizeCheck" />
 
         </LinearLayout>
 
@@ -89,9 +90,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/lato_regular"
+                    android:hint="@string/message_search_hint"
                     android:inputType="text"
-                    android:hint="Tìm kiếm tin nhắn..."
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    tools:ignore="VisualLintTextFieldSize,TextContrastCheck" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -99,18 +101,19 @@
                 android:id="@+id/tvCancel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center"
                 android:layout_marginStart="12dp"
-                android:text="Hủy"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:fontFamily="@font/lato_regular"
-                android:textSize="16sp"
                 android:clickable="true"
                 android:focusable="true"
+                android:fontFamily="@font/lato_regular"
+                android:gravity="center"
+                android:text="@string/cancel"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
                 android:visibility="gone"
-                tools:visibility="visible"/>
+                tools:ignore="TouchTargetSizeCheck,TextContrastCheck"
+                tools:visibility="visible" />
 
         </LinearLayout>
     </LinearLayout>
@@ -144,17 +147,18 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="TIN NHẮN"
         android:fontFamily="@font/lato_bold"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="15dp"
+        android:text="@string/message"
+        android:textAllCaps="true"
         android:textColor="@color/icon_dark_gray"
         android:textSize="15sp"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="@+id/cvChatList"
         app:layout_constraintTop_toTopOf="@+id/cvChatList"
-        android:paddingVertical="15dp"
-        android:paddingHorizontal="20dp"
-        android:visibility="gone"
-        tools:visibility="visible"
-        />
+        tools:ignore="TextContrastCheck,VisualLintOverlap"
+        tools:visibility="visible" />
 
     <LinearLayout
         android:id="@+id/llNoSearchResult"
@@ -167,16 +171,17 @@
         android:gravity="center_horizontal"
         android:orientation="vertical"
         android:visibility="gone"
-        tools:visibility="visible">
+        tools:visibility="visible"
+        tools:ignore="UseCompoundDrawables">
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_search_not_found"
-            />
+            tools:ignore="ContentDescription" />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Không tìm thấy kết quả phù hợp"
+            android:text="@string/result_not_found"
             android:textColor="@color/black"
             android:textSize="16sp"
             android:fontFamily="@font/lato_bold"

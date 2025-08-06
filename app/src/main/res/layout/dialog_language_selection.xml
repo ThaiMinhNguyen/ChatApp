@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/select_language"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:fontFamily="@font/lato_bold"
+        android:layout_marginBottom="16dp" />
+
+    <RadioGroup
+        android:id="@+id/rgLanguage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/rbVietnamese"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/vietnamese"
+            android:textSize="16sp"
+            android:fontFamily="@font/lato_regular"
+            android:padding="12dp"
+            android:background="?attr/selectableItemBackground" />
+
+        <RadioButton
+            android:id="@+id/rbEnglish"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/english"
+            android:textSize="16sp"
+            android:fontFamily="@font/lato_regular"
+            android:padding="12dp"
+            android:background="?attr/selectableItemBackground" />
+
+    </RadioGroup>
+
+
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnOk"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="14dp"
+        android:text="@string/ok"
+        android:textColor="@color/white"
+        android:background="@drawable/btn_friend_request"
+        />
+
+
+</LinearLayout>
