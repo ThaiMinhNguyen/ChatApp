@@ -87,7 +87,7 @@ class DetailChatFragment : Fragment() {
 
             Message(
                 id = "msg_$index",
-                conversationId = "conv_1",
+                roomId = "conv_1",
                 senderId = senderId,
                 senderName = senderName,
                 senderAvatar = senderAvatar,

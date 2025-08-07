@@ -2,7 +2,7 @@ package com.example.chatapp.domain.data
 
 data class Message(
     val id: String = "",
-    val conversationId: String = "",
+    val roomId: String = "",
     val senderId: String = "",
     val senderName: String = "",
     val senderAvatar: String = "",
@@ -13,7 +13,7 @@ data class Message(
 ) {
     constructor() : this(
         id = "",
-        conversationId = "",
+        roomId = "",
         senderId = "",
         senderName = "",
         senderAvatar = "",
