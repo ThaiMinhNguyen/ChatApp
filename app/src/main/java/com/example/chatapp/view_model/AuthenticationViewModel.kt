@@ -81,6 +81,8 @@ class AuthenticationViewModel @Inject constructor(
     }
 
     fun signUp() {
+        _loading.value = true
+
         viewModelScope.launch {
             authRepository.signUpWithEmailAndPassword(email.value, password.value, fullName.value)
                 .onSuccess { user ->
@@ -90,6 +92,7 @@ class AuthenticationViewModel @Inject constructor(
                 .onFailure { exception ->
                     Log.e("MyLog - AuthViewModel", "Sign-up failed: ${exception.message}")
                 }
+            _loading.value = false
         }
     }
 

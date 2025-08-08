@@ -1,6 +1,11 @@
 package com.example.chatapp.ui.friend_screen
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.TextWatcher
 import android.util.Log
@@ -12,25 +17,38 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.chatapp.R
 import com.example.chatapp.databinding.FriendScreenBinding
+import com.example.chatapp.domain.data.FriendListItem
+import com.example.chatapp.domain.data.FriendshipStatus
 import com.example.chatapp.domain.data.People
 import com.example.chatapp.domain.data.PeopleAction
-import com.example.chatapp.domain.data.User
 import com.example.chatapp.utils.FriendListUtils
+import com.example.chatapp.view_model.AuthenticationViewModel
+import com.example.chatapp.view_model.UserViewModel
 import com.google.android.material.tabs.TabLayout
-import kotlin.random.Random
+import kotlinx.coroutines.launch
+import androidx.core.graphics.toColorInt
+import androidx.core.graphics.drawable.toDrawable
 
 class FriendFragment : Fragment() {
     private var _binding : FriendScreenBinding? = null
     private val binding get() = _binding!!
 
+    private val userViewModel : UserViewModel by activityViewModels()
+    private val authenticationViewModel : AuthenticationViewModel by activityViewModels()
 
     private lateinit var friendAdapter: FriendItemAdapter
     private var currentTab = 0
 
-    private lateinit var peopleList: MutableList<People>
+    private var peopleList: MutableList<People> = emptyList<People>().toMutableList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,10 +61,20 @@ class FriendFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setUpRealTimeListener()
+        setUpObserver()
         setUpRecyclerView()
         setUpListener()
         setUpTab()
         setUpSearchListener()
+        setUpSwipeActions()
+    }
+
+    private fun setUpRealTimeListener(){
+        val currentUser = authenticationViewModel.user.value
+        if(currentUser != null){
+            userViewModel.startListening(currentUser)
+        }
     }
 
     private fun setUpListener() {
@@ -57,9 +85,22 @@ class FriendFragment : Fragment() {
 
     }
 
+    private fun setUpObserver(){
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED){
+                launch {
+                    userViewModel.people.collect{ people ->
+                        peopleList = people.toMutableList()
+                        handleTabSelection()
+                    }
+                }
+            }
+        }
+    }
+
     private fun setUpTab(){
-        val friends = requireContext().getString(R.string.friend)
-        val all = requireContext().getString(R.string.all)
+        val friends = requireContext().getString(R.string.friend).uppercase()
+        val all = requireContext().getString(R.string.all).uppercase()
         binding.tlFriend.addTab(binding.tlFriend.newTab().setText(friends))
         binding.tlFriend.addTab(binding.tlFriend.newTab().setText(all))
 
@@ -140,7 +181,7 @@ class FriendFragment : Fragment() {
 
 
     private fun setUpRecyclerView() {
-        peopleList = generatePeopleList()
+        val currentUser = authenticationViewModel.user.value
         Log.d("MyLog - FriendFragment", "People List: $peopleList")
         friendAdapter = FriendItemAdapter(
             onItemClick = { people ->
@@ -148,11 +189,19 @@ class FriendFragment : Fragment() {
             },
             onAddFriendClick = { people ->
                 Toast.makeText(requireContext(), "Add Friend: ${people.user.displayName}", Toast.LENGTH_SHORT).show()
-                onDataChange(people, PeopleAction.TOGGLE_REQUEST_SENT)
+                val status : FriendshipStatus
+                if (people.isRequestSent == true) {
+                    status = FriendshipStatus.NONE
+                } else {
+                    status = FriendshipStatus.PENDING
+                }
+                userViewModel.toggleFriendRequest(currentUser!!, people.user, status)
+
             },
             onAcceptFriendClick = { people ->
                 Toast.makeText(requireContext(), "Accept Friend: ${people.user.displayName}", Toast.LENGTH_SHORT).show()
-                onDataChange(people, PeopleAction.TOGGLE_REQUEST_RECEIVED_ACCEPT)
+                val status = FriendshipStatus.ACCEPTED
+                userViewModel.toggleFriendRequest(currentUser!!, people.user, status)
             }
         )
 
@@ -162,28 +211,6 @@ class FriendFragment : Fragment() {
         }
     }
 
-
-    private fun onDataChange(person: People, action: PeopleAction) {
-        val index = peopleList.indexOfFirst { it.user.uid == person.user.uid }
-
-        if (index != -1) {
-            val updatedPerson = when (action) {
-                PeopleAction.TOGGLE_REQUEST_RECEIVED_ACCEPT -> {
-                    peopleList[index].copy(isFriend = true, isRequestReceived = false)
-                }
-                PeopleAction.TOGGLE_REQUEST_SENT -> {
-                    peopleList[index].copy(isRequestSent = !peopleList[index].isRequestSent)
-                }
-                PeopleAction.TOGGLE_REQUEST_RECEIVED_DECLINE -> {
-                    peopleList[index].copy(isRequestReceived = false)
-                }
-            }
-
-            peopleList[index] = updatedPerson
-
-            handleTabSelection()
-        }
-    }
 
     private fun setUpSearchListener(){
         binding.etSearch.setOnFocusChangeListener{ _, hasFocus ->
@@ -254,85 +281,89 @@ class FriendFragment : Fragment() {
         binding.llNoSearchResult.visibility = View.VISIBLE
     }
 
+    private fun setUpSwipeActions(){
+
+        val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
+
+            override fun getMovementFlags(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder
+            ): Int {
+                val possition = viewHolder.adapterPosition
+                if (possition == RecyclerView.NO_POSITION) return 0
+
+                val item = friendAdapter.currentList.getOrNull(possition)
+                val canSwipe = item is FriendListItem.PersonItem && item.people.isRequestReceived
+
+                return if (canSwipe) makeMovementFlags(0, ItemTouchHelper.LEFT) else 0
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                val choosenItem = friendAdapter.currentList[position] as FriendListItem.PersonItem
+                val choosenUser = choosenItem.people.user
+                val currentUser = authenticationViewModel.user.value
+                userViewModel.toggleFriendRequest(currentUser!!, choosenUser, FriendshipStatus.DECLINED)
+
+            }
+
+            override fun onChildDraw(
+                c: Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float,
+                dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                val itemView = viewHolder.itemView
+
+                if (dX < 0) {
+                    val bg = "#F44336".toColorInt().toDrawable()
+                    bg.setBounds(
+                        itemView.right + dX.toInt(),
+                        itemView.top,
+                        itemView.right,
+                        itemView.bottom
+                    )
+                    bg.draw(c)
+
+
+
+                    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = Color.WHITE
+                        textSize = 40f
+                        typeface = Typeface.DEFAULT_BOLD
+                    }
+                    val text = requireContext().getString(R.string.decline)
+                    val textWidth = paint.measureText(text)
+                    val textX = (itemView.right - 32f) - textWidth
+                    val textY = itemView.top + itemView.height / 2f + 40f
+                    c.drawText(text, textX, textY, paint)
+                }
+
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
+
+        }
+
+        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
+        itemTouchHelper.attachToRecyclerView(binding.rvPeopleList)
+
+
+    }
 
 
     override fun onDestroyView() {
         super.onDestroyView()
+        userViewModel.stopAllListeners()
         _binding = null
     }
 
-
-
-
-    //TODO: các func nên để trong viewModel
-    fun generatePeopleList(): MutableList<People> {
-        val users = listOf(
-            User("1", "user1@example.com", "John Doe", "https://example.com/photo1.jpg", "1234567890", "1990-01-01", true),
-            User("2", "user2@example.com", "Jane Smith", "https://example.com/photo2.jpg", "0987654321", "1985-05-15", true),
-            User("3", "user3@example.com", "Robert Brown", "https://example.com/photo3.jpg", "1122334455", "2000-10-20", false),
-            User("4", "user4@example.com", "Emily Davis", "https://example.com/photo4.jpg", "6677889900", "1992-03-05", true),
-            User("5", "user5@example.com", "Michael Wilson", "https://example.com/photo5.jpg", "2233445566", "1988-07-11", false),
-            User("6", "user6@example.com", "Olivia Johnson", "https://example.com/photo6.jpg", "5566778899", "1995-09-30", true),
-            User("7", "user7@example.com", "William Lee", "https://example.com/photo7.jpg", "4433221100", "1993-12-25", true),
-            User("8", "user8@example.com", "Sophia Martinez", "https://example.com/photo8.jpg", "3344556677", "1991-11-18", true),
-            User("9", "user9@example.com", "James Taylor", "https://example.com/photo9.jpg", "2233557788", "1994-04-04", false),
-            User("10", "user10@example.com", "Isabella Anderson", "https://example.com/photo10.jpg", "9988776655", "1996-06-22", true),
-            User("11", "user11@example.com", "David Thomas", "https://example.com/photo11.jpg", "1010101010", "1987-08-15", false),
-            User("12", "user12@example.com", "Charlotte White", "https://example.com/photo12.jpg", "1231231234", "2001-02-28", true),
-            User("13", "user13@example.com", "Daniel Harris", "https://example.com/photo13.jpg", "1414141414", "1984-12-12", false),
-            User("14", "user14@example.com", "Ava Martin", "https://example.com/photo14.jpg", "1515151515", "1999-05-17", true),
-            User("15", "user15@example.com", "Lucas Clark", "https://example.com/photo15.jpg", "1616161616", "2002-08-19", true)
-        )
-
-        return users.map { user ->
-            val isFriend = Random.nextBoolean()
-            val isRequestSent = if(isFriend) false else Random.nextBoolean()
-            val isRequestReceived = if(isRequestSent||isFriend) false else Random.nextBoolean()
-            People(
-                user,
-                isFriend = isFriend,
-                isRequestSent = isRequestSent,
-                isRequestReceived = isRequestReceived
-            )
-        }.sortByGivenNameVietnamese().toMutableList()
-    }
-
-
-    fun List<People>.sortByGivenNameVietnamese(): List<People> {
-        return this.sortedBy { people ->
-            val givenName = getGivenName(people)
-            normalizeVietnamese(givenName).lowercase()
-        }
-    }
-
-    private fun getGivenName(people: People): String {
-        val fullName = people.user.displayName
-
-        return if (fullName != null && fullName.isNotBlank()) {
-            val nameParts = fullName.trim().split("\\s+".toRegex())
-            nameParts.lastOrNull() ?: ""
-        } else {
-            people.user.email ?: ""
-        }
-    }
-
-
-    private fun normalizeVietnamese(text: String): String {
-        return text
-            .replace(Regex("[àáảãạăằắẳẵặâầấẩẫậ]"), "a")
-            .replace(Regex("[èéẻẽẹêềếểễệ]"), "e")
-            .replace(Regex("[ìíỉĩị]"), "i")
-            .replace(Regex("[òóỏõọôồốổỗộơờớởỡợ]"), "o")
-            .replace(Regex("[ùúủũụưừứửữự]"), "u")
-            .replace(Regex("[ỳýỷỹỵ]"), "y")
-            .replace("đ", "d")
-            .replace(Regex("[ÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬ]"), "A")
-            .replace(Regex("[ÈÉẺẼẸÊỀẾỂỄỆ]"), "E")
-            .replace(Regex("[ÌÍỈĨỊ]"), "I")
-            .replace(Regex("[ÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢ]"), "O")
-            .replace(Regex("[ÙÚỦŨỤƯỪỨỬỮỰ]"), "U")
-            .replace(Regex("[ỲÝỶỸỴ]"), "Y")
-            .replace("Đ", "D")
-    }
 
 }

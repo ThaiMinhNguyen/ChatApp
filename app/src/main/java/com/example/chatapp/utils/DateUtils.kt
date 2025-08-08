@@ -106,4 +106,8 @@ object DateUtils {
         return currentCalendar.get(Calendar.YEAR) == dateCalendar.get(Calendar.YEAR) &&
                 currentCalendar.get(Calendar.DAY_OF_YEAR) == dateCalendar.get(Calendar.DAY_OF_YEAR)
     }
+
+    fun getCurrentTimestamp(): Long {
+        return System.currentTimeMillis()
+    }
 }

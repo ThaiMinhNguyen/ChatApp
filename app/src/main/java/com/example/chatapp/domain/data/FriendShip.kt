@@ -8,10 +8,11 @@ data class Friendship(
     val acceptedAt: Long? = null,
     val requestedBy: String? = null
 ) {
-    constructor() : this("", "", FriendshipStatus.PENDING, 0L)
+    constructor() : this("", "", FriendshipStatus.NONE, 0L)
 }
 
 enum class FriendshipStatus {
+    NONE,
     PENDING,
     ACCEPTED,
     DECLINED,

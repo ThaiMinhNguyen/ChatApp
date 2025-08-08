@@ -68,4 +68,7 @@
     <string name="hour_unit">g</string>
     <string name="chat_result_found">tin nhắn phù hợp</string>
     <string name="all">TẤT CẢ</string>
+    <string name="decline">Từ chối</string>
+    <string name="agree">Đồng ý</string>
+    <string name="user_alt">Người dùng</string>
 </resources>

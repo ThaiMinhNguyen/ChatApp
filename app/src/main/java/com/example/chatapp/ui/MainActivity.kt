@@ -19,6 +19,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.chatapp.R
 import com.example.chatapp.databinding.ActivityMainBinding
 import com.example.chatapp.view_model.AuthenticationViewModel
+import com.example.chatapp.view_model.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navController: androidx.navigation.NavController
 
     private val authViewModel: AuthenticationViewModel by viewModels()
+    private val userViewModel: UserViewModel by viewModels()
     private var isBottomNavVisibleByDestination: Boolean = false
     private var isKeyboardVisible: Boolean = false
 
@@ -37,9 +39,7 @@ class MainActivity : AppCompatActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val callback = onBackPressedDispatcher.addCallback(this) {
-            //Disable back button functionality
-        }
+        onBackPressedDispatcher.addCallback(this) {}
         setUpView()
         setUpBottomNavigation()
         setUpKeyboardListener()
@@ -50,11 +50,22 @@ class MainActivity : AppCompatActivity() {
     private fun setUpObserver() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                authViewModel.loading.collect{
-                    if (it) {
-                        binding.llProgressBar.visibility = android.view.View.VISIBLE
-                    } else {
-                        binding.llProgressBar.visibility = android.view.View.GONE
+                launch {
+                    authViewModel.loading.collect {
+                        if (it) {
+                            binding.llProgressBar.visibility = View.VISIBLE
+                        } else {
+                            binding.llProgressBar.visibility = View.GONE
+                        }
+                    }
+                }
+                launch {
+                    userViewModel.loading.collect {
+                        if (it) {
+                            binding.llProgressBar.visibility = View.VISIBLE
+                        } else {
+                            binding.llProgressBar.visibility = View.GONE
+                        }
                     }
                 }
             }
@@ -107,7 +118,6 @@ class MainActivity : AppCompatActivity() {
                             navController.navigate(R.id.homeFragment)
                         }
                     }
-
                 }
             }
         }

@@ -1,6 +1,7 @@
 package com.example.chatapp.ui.friend_screen
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ListAdapter
@@ -70,7 +71,9 @@ class FriendItemAdapter(
 
         fun bind(people: People) {
             with(binding) {
-                tvFriendName.text = people.user.displayName ?: people.user.email ?: "Người dùng"
+
+                val userAlt = itemView.context.getString(R.string.cancel)
+                tvFriendName.text = people.user.displayName ?: people.user.email ?: userAlt
 
                 if (people.user.photoUrl != null) {
                     Glide.with(itemView.context)
@@ -84,13 +87,13 @@ class FriendItemAdapter(
 
                 when {
                     people.isFriend -> {
-                        btnAction.visibility = android.view.View.GONE
+                        btnAction.visibility = View.GONE
                     }
 
                     people.isRequestSent -> {
                         btnAction.apply {
-                            visibility = android.view.View.VISIBLE
-                            text = "Hủy"
+                            visibility = View.VISIBLE
+                            text = context.getString(R.string.cancel)
                             setBackgroundResource(R.drawable.btn_friend_request_cancel)
                             setTextColor(
                                 ContextCompat.getColor(
@@ -107,8 +110,8 @@ class FriendItemAdapter(
 
                     people.isRequestReceived -> {
                         btnAction.apply {
-                            visibility = android.view.View.VISIBLE
-                            text = "Đồng ý"
+                            visibility = View.VISIBLE
+                            text = context.getString(R.string.agree)
                             setBackgroundResource(R.drawable.btn_friend_request)
                             setTextColor(ContextCompat.getColor(itemView.context, R.color.white))
                             isEnabled = true
@@ -120,8 +123,8 @@ class FriendItemAdapter(
 
                     else -> {
                         btnAction.apply {
-                            visibility = android.view.View.VISIBLE
-                            text = "Kết bạn"
+                            visibility = View.VISIBLE
+                            text = context.getString(R.string.add_friend)
                             setBackgroundResource(R.drawable.btn_friend_request)
                             setTextColor(ContextCompat.getColor(itemView.context, R.color.white))
                             isEnabled = true

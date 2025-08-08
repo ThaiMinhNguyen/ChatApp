@@ -69,5 +69,8 @@
     <string name="hour_unit">h</string>
     <string name="chat_result_found">matching message(s)</string>
     <string name="all">ALL</string>
+    <string name="decline">Decline</string>
+    <string name="agree">Accept</string>
+    <string name="user_alt">User</string>
 
 </resources>
