@@ -7,9 +7,9 @@ import com.example.chatapp.domain.data.FriendshipStatus
 import com.example.chatapp.domain.data.People
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.domain.repository.UserRepository
-import com.google.firebase.firestore.ListenerRegistration
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -24,20 +24,20 @@ class UserViewModel @Inject constructor(
     private val _loading = MutableStateFlow(false)
     val loading get() = _loading
 
-    private val activeListeners = mutableListOf<ListenerRegistration>()
+    private var peopleJob: Job? = null
 
     fun startListening(currentUser: User) {
-        stopAllListeners()
-        val listeners = userRepository.listenToPeopleChanges(currentUser) { peopleList ->
-            _people.value = peopleList
+        peopleJob?.cancel()
+        peopleJob = viewModelScope.launch {
+            userRepository.listenPeopleFlow(currentUser).collect { peopleList ->
+                _people.value = peopleList
+            }
         }
-        activeListeners.addAll(listeners)
     }
 
     fun stopAllListeners() {
-        activeListeners.forEach { it.remove() }
-        activeListeners.clear()
-        userRepository.stopAllListeners()
+        peopleJob?.cancel()
+        peopleJob = null
     }
 
     fun toggleFriendRequest(currentUser: User, sendToUser: User, status: FriendshipStatus){

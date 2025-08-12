@@ -9,42 +9,29 @@ import com.example.chatapp.R
 import com.example.chatapp.databinding.ItemChatBinding
 import com.example.chatapp.databinding.ItemSearchChatBinding
 import com.example.chatapp.domain.data.ChatListItem
-import com.example.chatapp.domain.data.ChatOverview
-import com.example.chatapp.domain.data.ChatSearchResult
 
-class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatListItem, RecyclerView.ViewHolder>(ChatOverviewDiffCallback()) {
+class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatListItem, RecyclerView.ViewHolder>(ChatListUiDiffCallback()) {
 
     companion object {
-        private const val VIEW_TYPE_CHAT = 0
+        private const val VIEW_TYPE_ROOM = 0
         private const val VIEW_TYPE_SEARCH_RESULT = 1
     }
 
-    override fun getItemViewType(position: Int): Int {
-        return when (getItem(position)) {
-            is ChatOverview -> VIEW_TYPE_CHAT
-            is ChatSearchResult -> VIEW_TYPE_SEARCH_RESULT
-        }
+    override fun getItemViewType(position: Int): Int = when (getItem(position)) {
+        is ChatListItem.RoomItem -> VIEW_TYPE_ROOM
+        is ChatListItem.SearchResultItem -> VIEW_TYPE_SEARCH_RESULT
     }
 
     inner class ChatViewHolder(private val binding: ItemChatBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(chatOverview: ChatOverview) {
-            with(binding){
-                root.setOnClickListener {
-                    onItemClick(chatOverview.conversationId)
-                }
-
-
-                tvUserName.text = chatOverview.contactName
-                tvLastMessage.text = chatOverview.lastMessage
-                tvTime.text = formatTime(chatOverview.lastMessageTime)
-
-                if (chatOverview.unreadCount > 0) {
-                    tvUnreadCount.visibility = android.view.View.VISIBLE
-                    tvUnreadCount.text = chatOverview.unreadCount.toString()
-                } else {
-                    tvUnreadCount.visibility = android.view.View.GONE
-                }
-
+        fun bind(item: ChatListItem.RoomItem) {
+            val room = item.room
+            val roomId = room.participants.sorted().joinToString("_")
+            with(binding) {
+                root.setOnClickListener { onItemClick(roomId) }
+                tvUserName.text = room.roomName ?: ""
+                tvLastMessage.text = room.lastMessage ?: ""
+                tvTime.text = room.lastMessageTime?.let { formatTime(it) } ?: ""
+                tvUnreadCount.visibility = android.view.View.GONE
             }
         }
 
@@ -66,47 +53,31 @@ class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatListI
     }
 
     inner class SearchResultViewHolder(private val binding: ItemSearchChatBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(searchResult: ChatSearchResult) {
+        fun bind(item: ChatListItem.SearchResultItem) {
             with(binding) {
-                root.setOnClickListener {
-                    onItemClick(searchResult.conversationId)
-                }
-
-                tvUserName.text = searchResult.contactName
-
-                // Load avatar
+                root.setOnClickListener { onItemClick(item.roomId) }
+                tvUserName.text = item.contactName
                 Glide.with(civAvatar)
-                    .load(searchResult.contactAvatar)
+                    .load(item.contactAvatar)
                     .placeholder(R.drawable.ic_user_mail)
                     .into(civAvatar)
-
-                tvMessageCount.text = searchResult.messageMatch.toString() + " " + root.context.getString(R.string.chat_result_found)
-
+                tvMessageCount.text = item.messageMatch.toString() + " " + root.context.getString(R.string.chat_result_found)
             }
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return when(viewType){
-            VIEW_TYPE_CHAT -> {
-                val binding = ItemChatBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-                ChatViewHolder(binding)
-            }
-            VIEW_TYPE_SEARCH_RESULT -> {
-                val binding = ItemSearchChatBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-                SearchResultViewHolder(binding)
-            }
+        return when (viewType) {
+            VIEW_TYPE_ROOM -> ChatViewHolder(ItemChatBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+            VIEW_TYPE_SEARCH_RESULT -> SearchResultViewHolder(ItemSearchChatBinding.inflate(LayoutInflater.from(parent.context), parent, false))
             else -> throw IllegalArgumentException("Invalid view type")
         }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        when (holder) {
-            is ChatViewHolder -> holder.bind(getItem(position) as ChatOverview)
-            is SearchResultViewHolder -> holder.bind(getItem(position) as ChatSearchResult)
-            else -> throw IllegalArgumentException("Invalid view holder type")
+        when (val item = getItem(position)) {
+            is ChatListItem.RoomItem -> (holder as ChatViewHolder).bind(item)
+            is ChatListItem.SearchResultItem -> (holder as SearchResultViewHolder).bind(item)
         }
     }
-
-
 }

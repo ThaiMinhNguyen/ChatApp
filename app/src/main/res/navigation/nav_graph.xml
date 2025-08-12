@@ -49,7 +49,11 @@
         android:name="com.example.chatapp.ui.new_chat_screen.NewChatFragment"
         android:label="NewChatFragment"
         tools:layout="@layout/new_chat_screen"
-        />
+        >
+        <action
+            android:id="@+id/action_newChatFragment_to_detailChatFragment"
+            app:destination="@id/detailChatFragment" />
+    </fragment>
     <fragment
         android:id="@+id/friendFragment"
         android:name="com.example.chatapp.ui.friend_screen.FriendFragment"

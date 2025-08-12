@@ -41,6 +41,7 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         onBackPressedDispatcher.addCallback(this) {}
         setUpView()
+        setUpRealTimeListener()
         setUpBottomNavigation()
         setUpKeyboardListener()
         observeAuthState()
@@ -76,6 +77,13 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+    }
+
+    private fun setUpRealTimeListener(){
+        val currentUser = authViewModel.user.value
+        if(currentUser != null){
+            userViewModel.startListening(currentUser)
+        }
     }
 
     private fun setUpBottomNavigation() {
@@ -114,6 +122,7 @@ class MainActivity : AppCompatActivity() {
                     if (user == null) {
                         navController.navigate(R.id.signInFragment)
                     } else {
+                        userViewModel.startListening(user)
                         if (navController.currentDestination?.id == R.id.signInFragment|| navController.currentDestination?.id == R.id.signUpFragment) {
                             navController.navigate(R.id.homeFragment)
                         }

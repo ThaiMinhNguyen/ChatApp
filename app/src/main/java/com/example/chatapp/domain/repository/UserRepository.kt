@@ -1,17 +1,19 @@
 package com.example.chatapp.domain.repository
 
 import android.util.Log
-import com.example.chatapp.domain.data.User
-import com.example.chatapp.domain.data.People
 import com.example.chatapp.domain.data.Friendship
 import com.example.chatapp.domain.data.FriendshipStatus
+import com.example.chatapp.domain.data.People
+import com.example.chatapp.domain.data.User
 import com.example.chatapp.utils.DateUtils
 import com.example.chatapp.utils.UserUtils
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Filter
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.toObject
 import javax.inject.Inject
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class UserRepository @Inject constructor(
@@ -110,90 +112,63 @@ class UserRepository @Inject constructor(
         }
     }
 
-//    suspend fun declineFriendRequest(currentUser: User, sendToUser: User) : Result<Friendship>{
-//        return try {
-//            val uid = UserUtils.generateId(currentUser.uid, sendToUser.uid)
-//            val friendRequest = Friendship(
-//                user1 = currentUser.uid,
-//                user2 = sendToUser.uid,
-//                status = FriendshipStatus.DECLINED,
-//                createdAt = DateUtils.getCurrentTimestamp(),
-//                requestedBy = currentUser.uid
-//
-//            )
-//            firestore.collection("friendships")
-//                .document(uid)
-//                .set(friendRequest)
-//                .await()
-//            return Result.success(friendRequest)
-//        } catch (e:Exception){
-//            Log.e("MyLog - UserRepo", "Error creating user: ${e.message}")
-//            Result.failure(e)
-//        }
-//    }
-
-
-    fun listenToPeopleChanges(user: User, onPeopleChanged: (List<People>) -> Unit): List<ListenerRegistration> {
+    fun listenPeopleFlow(currentUser: User): Flow<List<People>> = callbackFlow {
         var usersList: List<User> = emptyList()
         var friendshipsList: List<Friendship> = emptyList()
 
-        fun updatePeopleList() {
-            val peopleList = usersList.map { otherUser ->
-                val friendship = friendshipsList.find {
-                    (it.user1 == user.uid && it.user2 == otherUser.uid) ||
-                            (it.user1 == otherUser.uid && it.user2 == user.uid)
+        fun emitPeople() {
+            val peopleList = usersList
+                .filter { it.uid != currentUser.uid }
+                .map { otherUser ->
+                    val friendship = friendshipsList.find {
+                        (it.user1 == currentUser.uid && it.user2 == otherUser.uid) ||
+                                (it.user1 == otherUser.uid && it.user2 == currentUser.uid)
+                    }
+
+                    val isFriend = friendship?.status == FriendshipStatus.ACCEPTED
+                    val isRequestSent = friendship?.status == FriendshipStatus.PENDING && friendship.requestedBy == currentUser.uid
+                    val isRequestReceived = friendship?.status == FriendshipStatus.PENDING && friendship.requestedBy != currentUser.uid
+
+                    People(
+                        user = otherUser,
+                        isFriend = isFriend,
+                        isRequestSent = isRequestSent,
+                        isRequestReceived = isRequestReceived
+                    )
                 }
-
-                val isFriend = friendship?.status == FriendshipStatus.ACCEPTED
-                val isRequestSent = friendship?.status == FriendshipStatus.PENDING && friendship.requestedBy == user.uid
-                val isRequestReceived = friendship?.status == FriendshipStatus.PENDING && friendship.requestedBy != user.uid
-
-                People(
-                    user = otherUser,
-                    isFriend = isFriend,
-                    isRequestSent = isRequestSent,
-                    isRequestReceived = isRequestReceived
-                )
-            }
-            onPeopleChanged(peopleList)
+            trySend(peopleList).isSuccess
         }
 
-        val usersListener = firestore.collection("users")
+        val usersReg = firestore.collection("users")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e("MyLog - UserRepo", "Error listening to users: ${error.message}")
                     return@addSnapshotListener
                 }
-
-                usersList = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(User::class.java)
-                }?.filter { it.uid != user.uid } ?: emptyList()
-
-                updatePeopleList()
+                usersList = snapshot?.documents?.mapNotNull { it.toObject(User::class.java) } ?: emptyList()
+                emitPeople()
             }
 
-        val friendshipsListener = firestore.collection("friendships")
-            .where(Filter.or(
-                Filter.equalTo("user1", user.uid),
-                Filter.equalTo("user2", user.uid)
-            ))
+        val friendshipsReg = firestore.collection("friendships")
+            .where(
+                Filter.or(
+                    Filter.equalTo("user1", currentUser.uid),
+                    Filter.equalTo("user2", currentUser.uid)
+                )
+            )
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e("MyLog - UserRepo", "Error listening to friendships: ${error.message}")
                     return@addSnapshotListener
                 }
-
-                friendshipsList = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Friendship::class.java)
-                } ?: emptyList()
-
-                updatePeopleList()
+                friendshipsList = snapshot?.documents?.mapNotNull { it.toObject(Friendship::class.java) } ?: emptyList()
+                emitPeople()
             }
 
-        activeListeners.add(usersListener)
-        activeListeners.add(friendshipsListener)
-
-        return activeListeners
+        awaitClose {
+            usersReg.remove()
+            friendshipsReg.remove()
+        }
     }
 
 

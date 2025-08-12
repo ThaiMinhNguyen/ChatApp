@@ -9,10 +9,22 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.chatapp.R
 import com.example.chatapp.databinding.NewChatScreenBinding
 import com.example.chatapp.domain.data.User
+import com.example.chatapp.view_model.AuthenticationViewModel
+import com.example.chatapp.view_model.ChatViewModel
+import com.example.chatapp.view_model.UserViewModel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class NewChatFragment : Fragment() {
     private var _binding: NewChatScreenBinding? = null
@@ -22,7 +34,12 @@ class NewChatFragment : Fragment() {
     private lateinit var selectedFriendsAdapter: SelectedFriendsAdapter
     private var allUsers: List<User> = emptyList()
     private val selectedUsers = mutableListOf<User>()
-    
+
+    private val chatViewModel: ChatViewModel by activityViewModels()
+    private val authViewModel: AuthenticationViewModel by activityViewModels()
+    private val userViewModel: UserViewModel by activityViewModels()
+
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -36,7 +53,7 @@ class NewChatFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setUpRecyclerView()
         setUpListeners()
-        loadUsers()
+        setUpObserver()
     }
     
     override fun onDestroyView() {
@@ -96,65 +113,37 @@ class NewChatFragment : Fragment() {
 
         binding.btnCreateChat.setOnClickListener {
             if (selectedUsers.isNotEmpty()) {
+
                 createChatWithSelectedUsers()
             }
         }
     }
-    
-    private fun loadUsers() {
 
-        val dummyUsers = listOf(
-            User(
-                uid = "1",
-                email = "dangtuananh@example.com",
-                displayName = "Đặng Tuấn Anh",
-                photoUrl = null,
-                phoneNumber = null,
-                dateOfBirth = null,
-                isEmailVerified = true
-            ),
-            User(
-                uid = "2",
-                email = "tranthiminhchau@example.com",
-                displayName = "Trần Thị Minh Châu",
-                photoUrl = null,
-                phoneNumber = null,
-                dateOfBirth = null,
-                isEmailVerified = true
-            ),
-            User(
-                uid = "3",
-                email = "tangphuongchi@example.com",
-                displayName = "Tăng Phương Chi",
-                photoUrl = null,
-                phoneNumber = null,
-                dateOfBirth = null,
-                isEmailVerified = true
-            ),
-            User(
-                uid = "4",
-                email = "kevindinhkhanh@example.com",
-                displayName = "Kevin Đinh Khanh",
-                photoUrl = null,
-                phoneNumber = null,
-                dateOfBirth = null,
-                isEmailVerified = true
-            ),
-            User(
-                uid = "5",
-                email = "phamlong@example.com",
-                displayName = "Phạm Long",
-                photoUrl = null,
-                phoneNumber = null,
-                dateOfBirth = null,
-                isEmailVerified = true
-            )
-        )
-        
-        allUsers = dummyUsers
-        friendSelectionAdapter.submitList(dummyUsers)
+
+    private fun setUpObserver(){
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED){
+                launch {
+                    userViewModel.people.collect{ people ->
+                        val userList = people.filter { it.isFriend }.map { it.user }
+                        friendSelectionAdapter.submitList(userList)
+                    }
+                }
+                launch {
+                    chatViewModel.navEvents.collect{
+                        if(it is ChatViewModel.NavEvent.ToDetail){
+                            val action = NewChatFragmentDirections.actionNewChatFragmentToDetailChatFragment(it.roomId)
+                            val option =  NavOptions.Builder()
+                                .setPopUpTo(R.id.newChatFragment, inclusive = true)
+                                .build()
+                            findNavController().navigate(action, option)
+                        }
+                    }
+                }
+            }
+        }
     }
-    
+
     private fun filterUsers(query: String) {
         val filteredUsers = if (query.isEmpty()) {
             allUsers
@@ -199,7 +188,10 @@ class NewChatFragment : Fragment() {
     }
 
     private fun createChatWithSelectedUsers() {
-        // TODO: Implement chat creation logic
+        //Currently create chat for the first item
+        val currentUser = authViewModel.user.value
+        val selectedFriend = selectedUsers[0]
+        chatViewModel.createRoom(currentUser!!, selectedFriend)
     }
     
     private fun updateSelectionUI() {

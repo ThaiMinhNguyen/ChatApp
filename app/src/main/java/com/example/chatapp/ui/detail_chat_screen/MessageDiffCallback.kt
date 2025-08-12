@@ -5,7 +5,7 @@ import com.example.chatapp.domain.data.Message
 
 class MessageDiffCallback : DiffUtil.ItemCallback<Message>() {
     override fun areItemsTheSame(oldItem: Message, newItem: Message): Boolean {
-        return oldItem.id == newItem.id
+        return oldItem.uid == newItem.uid
     }
 
     override fun areContentsTheSame(oldItem: Message, newItem: Message): Boolean {

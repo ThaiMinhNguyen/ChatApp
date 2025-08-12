@@ -6,14 +6,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chatapp.R
 import com.example.chatapp.databinding.HomeScreenBinding
-import com.example.chatapp.domain.data.ChatOverview
-import com.example.chatapp.domain.data.ChatSearchResult
+import com.example.chatapp.domain.data.ChatListItem
+import com.example.chatapp.domain.data.Room
+import com.example.chatapp.view_model.*
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 
 class HomeFragment : Fragment() {
@@ -21,6 +28,12 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var chatListAdapter: ChatListAdapter
+
+    private val authenticationViewModel : AuthenticationViewModel by activityViewModels()
+    private val chatViewModel : ChatViewModel by activityViewModels()
+    private val userViewModel : UserViewModel by activityViewModels()
+
+    private var isSearchMode = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,10 +48,48 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setUpView()
         setUpListener()
+        setUpRealTimeListener()
+        setUpObserver()
     }
 
     private fun setUpView() {
         setUpRecyclerView()
+    }
+
+    private fun setUpRealTimeListener(){
+        val user = authenticationViewModel.user.value
+        chatViewModel.listenToRoomFlow(user!!)
+    }
+
+    private fun setUpObserver(){
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED){
+                launch {
+                    combine(
+                        chatViewModel.rooms,
+                        userViewModel.people,
+                        authenticationViewModel.user
+                    ) { rooms, people, currentUser ->
+                        val currentUid = currentUser?.uid
+                        val userById = people.associateBy { it.user.uid }
+                        rooms.map { room ->
+                            val otherUid = room.participants.firstOrNull { it != currentUid } ?: currentUid
+                            val otherUser = otherUid?.let { uid -> userById[uid]?.user }
+                            ChatListItem.RoomItem(
+                                room.copy(
+                                    roomName = room.roomName ?: otherUser?.displayName,
+                                    roomAvatar = room.roomAvatar ?: otherUser?.photoUrl
+                                )
+                            )
+                        }
+                    }.collect { roomItems ->
+                        if(!isSearchMode) {
+                            chatListAdapter.submitList(roomItems)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun setUpRecyclerView() {
@@ -51,32 +102,10 @@ class HomeFragment : Fragment() {
             setHasFixedSize(true)
         }
 
-        submitFakeChatList()
-
     }
 
-    private fun submitFakeChatList() {
-        //For testing, using dummy data
-        val dummyData = List(20) { index ->
-            ChatOverview(
-                conversationId = "conv_$index",
-                contactId = "contact_$index",
-                contactName = "Contact $index",
-                contactAvatar = "https://example.com/avatar_$index.png",
-                lastMessage = "Last message from Contact $index",
-                lastMessageTime = System.currentTimeMillis() - (index * 1000L * 60),
-                unreadCount = index % 5,
-                isOnline = index % 2 == 0,
-                isTyping = index % 3 == 0
-            )
-        }
-
-        chatListAdapter.submitList(dummyData.sortedBy { it.lastMessageTime }.reversed())
-
-    }
-
-    private fun navigateToDetailChat(conversationId: String) {
-        val action = HomeFragmentDirections.actionHomeFragmentToDetailChatFragment(conversationId)
+    private fun navigateToDetailChat(roomId: String) {
+        val action = HomeFragmentDirections.actionHomeFragmentToDetailChatFragment(roomId)
         findNavController().navigate(action)
     }
 
@@ -110,29 +139,44 @@ class HomeFragment : Fragment() {
     }
 
     private fun submitFakeSearchResults() {
-        val searchResults = List(5) { index ->
-            ChatSearchResult(
-                conversationId = "conv$index",
+        val results = List(5) { index ->
+            ChatListItem.SearchResultItem(
+                roomId = "conv$index",
                 contactId = "contact$index",
                 contactName = "Contact $index",
                 contactAvatar = "https://example.com/avatar$index.png",
                 messageMatch = index
             )
         }
-        chatListAdapter.submitList(searchResults)
+        chatListAdapter.submitList(results)
     }
 
     private fun switchToSearchMode() {
+        isSearchMode = true
         binding.tvCancel.visibility = View.VISIBLE
     }
 
 
     private fun switchToNormalMode() {
+        isSearchMode = false
         binding.tvCancel.visibility = View.GONE
         binding.llNoSearchResult.visibility = View.GONE
         binding.etSearch.clearFocus()
-        submitFakeChatList()
+        val currentUid = authenticationViewModel.user.value?.uid
+        val userById = userViewModel.people.value.associateBy { it.user.uid }
+        val roomItems = chatViewModel.rooms.value.map { room ->
+            val otherUid = room.participants.firstOrNull { it != currentUid } ?: currentUid
+            val otherUser = otherUid?.let { uid -> userById[uid]?.user }
+            ChatListItem.RoomItem(
+                room.copy(
+                    roomName = room.roomName ?: otherUser?.displayName,
+                    roomAvatar = room.roomAvatar ?: otherUser?.photoUrl
+                )
+            )
+        }
+        chatListAdapter.submitList(roomItems)
     }
+
 
     private fun onNoResultsFound(){
         binding.llNoSearchResult.visibility = View.VISIBLE
@@ -140,6 +184,7 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        chatViewModel.stopRoomFlowListener()
         _binding = null
     }
 }

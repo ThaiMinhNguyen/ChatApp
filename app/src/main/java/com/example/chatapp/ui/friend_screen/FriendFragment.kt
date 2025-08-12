@@ -1,11 +1,11 @@
 package com.example.chatapp.ui.friend_screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.TextWatcher
 import android.util.Log
@@ -16,6 +16,8 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.toColorInt
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -29,14 +31,11 @@ import com.example.chatapp.databinding.FriendScreenBinding
 import com.example.chatapp.domain.data.FriendListItem
 import com.example.chatapp.domain.data.FriendshipStatus
 import com.example.chatapp.domain.data.People
-import com.example.chatapp.domain.data.PeopleAction
 import com.example.chatapp.utils.FriendListUtils
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.UserViewModel
 import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.launch
-import androidx.core.graphics.toColorInt
-import androidx.core.graphics.drawable.toDrawable
 
 class FriendFragment : Fragment() {
     private var _binding : FriendScreenBinding? = null
@@ -61,7 +60,6 @@ class FriendFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setUpRealTimeListener()
         setUpObserver()
         setUpRecyclerView()
         setUpListener()
@@ -70,12 +68,7 @@ class FriendFragment : Fragment() {
         setUpSwipeActions()
     }
 
-    private fun setUpRealTimeListener(){
-        val currentUser = authenticationViewModel.user.value
-        if(currentUser != null){
-            userViewModel.startListening(currentUser)
-        }
-    }
+
 
     private fun setUpListener() {
         binding.tvCancel.setOnClickListener {
@@ -98,6 +91,7 @@ class FriendFragment : Fragment() {
         }
     }
 
+    @SuppressLint("InflateParams")
     private fun setUpTab(){
         val friends = requireContext().getString(R.string.friend).uppercase()
         val all = requireContext().getString(R.string.all).uppercase()
@@ -164,7 +158,7 @@ class FriendFragment : Fragment() {
         }
     }
 
-    fun updateBadgeCount(count: Int) {
+    private fun updateBadgeCount(count: Int) {
         val tab = binding.tlFriend.getTabAt(2)
         val customView = tab?.customView
 
@@ -189,11 +183,10 @@ class FriendFragment : Fragment() {
             },
             onAddFriendClick = { people ->
                 Toast.makeText(requireContext(), "Add Friend: ${people.user.displayName}", Toast.LENGTH_SHORT).show()
-                val status : FriendshipStatus
-                if (people.isRequestSent == true) {
-                    status = FriendshipStatus.NONE
+                val status : FriendshipStatus = if (people.isRequestSent) {
+                    FriendshipStatus.NONE
                 } else {
-                    status = FriendshipStatus.PENDING
+                    FriendshipStatus.PENDING
                 }
                 userViewModel.toggleFriendRequest(currentUser!!, people.user, status)
 
@@ -305,10 +298,10 @@ class FriendFragment : Fragment() {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
-                val choosenItem = friendAdapter.currentList[position] as FriendListItem.PersonItem
-                val choosenUser = choosenItem.people.user
+                val chosenItem = friendAdapter.currentList[position] as FriendListItem.PersonItem
+                val chosenUser = chosenItem.people.user
                 val currentUser = authenticationViewModel.user.value
-                userViewModel.toggleFriendRequest(currentUser!!, choosenUser, FriendshipStatus.DECLINED)
+                userViewModel.toggleFriendRequest(currentUser!!, chosenUser, FriendshipStatus.DECLINED)
 
             }
 
@@ -361,7 +354,6 @@ class FriendFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        userViewModel.stopAllListeners()
         _binding = null
     }
 
