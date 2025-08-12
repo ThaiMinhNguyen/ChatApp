@@ -1,5 +1,6 @@
 package com.example.chatapp.ui
 
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -69,6 +70,26 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                launch {
+                    userViewModel.people.collect{ people ->
+                        val friendRequestCount = people.count { !it.isFriend && it.isRequestReceived }
+                        updateFriendBadgeCount(friendRequestCount)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateFriendBadgeCount(count: Int){
+        binding.bottomNavigation.getOrCreateBadge(R.id.friendFragment).apply {
+            number = count
+            backgroundColor = Color.RED
+            badgeTextColor = Color.WHITE
+            maxCharacterCount = 3
+            if(count > 0) {
+                isVisible = true
+            } else {
+                isVisible = false
             }
         }
     }

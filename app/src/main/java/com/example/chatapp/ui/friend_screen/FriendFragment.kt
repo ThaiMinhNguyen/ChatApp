@@ -84,6 +84,8 @@ class FriendFragment : Fragment() {
                 launch {
                     userViewModel.people.collect{ people ->
                         peopleList = people.toMutableList()
+                        val friendRequestCount = people.count { !it.isFriend && it.isRequestReceived }
+                        updateBadgeCount(friendRequestCount)
                         handleTabSelection()
                     }
                 }
@@ -135,7 +137,6 @@ class FriendFragment : Fragment() {
             }
             2 -> {
                 Toast.makeText(requireContext(), "YÊU CẦU", Toast.LENGTH_SHORT).show()
-                updateBadgeCount(0)
                 val listWithHeaders = FriendListUtils.createListWithHeaders(peopleList, currentTab)
                 friendAdapter.submitList(listWithHeaders)
             }
@@ -194,7 +195,7 @@ class FriendFragment : Fragment() {
             onAcceptFriendClick = { people ->
                 Toast.makeText(requireContext(), "Accept Friend: ${people.user.displayName}", Toast.LENGTH_SHORT).show()
                 val status = FriendshipStatus.ACCEPTED
-                userViewModel.toggleFriendRequest(currentUser!!, people.user, status)
+                userViewModel.toggleFriendRequest(people.user, currentUser!!, status) //đảo chỗ 2 user để không bị ghi đè lên requestBy
             }
         )
 
@@ -301,7 +302,7 @@ class FriendFragment : Fragment() {
                 val chosenItem = friendAdapter.currentList[position] as FriendListItem.PersonItem
                 val chosenUser = chosenItem.people.user
                 val currentUser = authenticationViewModel.user.value
-                userViewModel.toggleFriendRequest(currentUser!!, chosenUser, FriendshipStatus.DECLINED)
+                userViewModel.toggleFriendRequest(chosenUser, currentUser!!, FriendshipStatus.DECLINED) //đảo chỗ 2 user để không bị ghi đè lên requestBy
 
             }
 
@@ -326,8 +327,6 @@ class FriendFragment : Fragment() {
                     )
                     bg.draw(c)
 
-
-
                     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = Color.WHITE
                         textSize = 40f
@@ -335,8 +334,8 @@ class FriendFragment : Fragment() {
                     }
                     val text = requireContext().getString(R.string.decline)
                     val textWidth = paint.measureText(text)
-                    val textX = (itemView.right - 32f) - textWidth
-                    val textY = itemView.top + itemView.height / 2f + 40f
+                    val textX = (itemView.right - 40f) - textWidth
+                    val textY = itemView.top + itemView.height / 2f + 20f
                     c.drawText(text, textX, textY, paint)
                 }
 
