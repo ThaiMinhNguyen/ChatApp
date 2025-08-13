@@ -125,18 +125,15 @@ class FriendFragment : Fragment() {
     private fun handleTabSelection() {
         when (currentTab) {
             0 -> {
-                Toast.makeText(requireContext(), "BẠN BÈ", Toast.LENGTH_SHORT).show()
                 val friendsList = peopleList.filter { it.isFriend }
                 val listWithHeaders = FriendListUtils.createListWithHeaders(friendsList, currentTab)
                 friendAdapter.submitList(listWithHeaders)
             }
             1 -> {
-                Toast.makeText(requireContext(), "TẤT CẢ", Toast.LENGTH_SHORT).show()
                 val listWithHeaders = FriendListUtils.createListWithHeaders(peopleList, currentTab)
                 friendAdapter.submitList(listWithHeaders)
             }
             2 -> {
-                Toast.makeText(requireContext(), "YÊU CẦU", Toast.LENGTH_SHORT).show()
                 val listWithHeaders = FriendListUtils.createListWithHeaders(peopleList, currentTab)
                 friendAdapter.submitList(listWithHeaders)
             }

@@ -9,12 +9,16 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.chatapp.databinding.DetailProfileScreenBinding
 import com.example.chatapp.utils.setImageUrl
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.datepicker.MaterialDatePicker
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -54,6 +58,7 @@ class DetailProfileFragment : Fragment() {
         setUpView()
         setUpListener()
         setupDateEditText()
+        setUpObserver()
     }
 
     private fun setUpView() {
@@ -70,13 +75,43 @@ class DetailProfileFragment : Fragment() {
         }
     }
 
+
+
+    private fun setUpObserver() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    authViewModel.user.collect { user ->
+                        if (user != null) {
+                            binding.apply {
+                                ivAvatar.setImageUrl(user.photoUrl)
+                                etFullName.setText(user.displayName)
+                                etPhoneNumber.setText(user.phoneNumber)
+                                etBirthday.setText(
+                                    if (user.dateOfBirth?.isNotEmpty() == true) user.dateOfBirth else ""
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun setUpListener() {
         binding.apply {
             tvSave.setOnClickListener {
                 val fullName = binding.etFullName.text.toString()
                 val phoneNumber = binding.etPhoneNumber.text.toString()
-    //            authViewModel.updateUserProfile(fullName, phoneNumber)
-
+                val dob = binding.etBirthday.text.toString()
+                val currentUser = authViewModel.user.value
+                val updateUser = currentUser?.copy(displayName = fullName, phoneNumber = phoneNumber, dateOfBirth = dob)
+                if(updateUser != null){
+                    authViewModel.updateUserProfile(updateUser)
+                    findNavController().navigateUp()
+                } else {
+                    Toast.makeText(requireContext(), "Fail to update profile", Toast.LENGTH_SHORT).show()
+                }
             }
 
             ivBack.setOnClickListener {

@@ -1,7 +1,10 @@
 package com.example.chatapp.ui.home_screen
 
+import android.annotation.SuppressLint
+import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -9,6 +12,9 @@ import com.example.chatapp.R
 import com.example.chatapp.databinding.ItemChatBinding
 import com.example.chatapp.databinding.ItemSearchChatBinding
 import com.example.chatapp.domain.data.ChatListItem
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatListItem, RecyclerView.ViewHolder>(ChatListUiDiffCallback()) {
 
@@ -31,28 +37,44 @@ class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatListI
                 tvUserName.text = room.roomName ?: ""
                 tvLastMessage.text = room.lastMessage ?: ""
                 tvTime.text = room.lastMessageTime?.let { formatTime(it) } ?: ""
-                tvUnreadCount.visibility = android.view.View.GONE
+                if(item.unread > 0){
+                    tvLastMessage.setTypeface(null, Typeface.BOLD)
+                    tvLastMessage.setTextColor(ContextCompat.getColor(itemView.context, R.color.black))
+                    tvUnreadCount.visibility = android.view.View.VISIBLE
+                    tvUnreadCount.text = item.unread.toString()
+                } else {
+                    tvLastMessage.setTypeface(null, Typeface.NORMAL)
+                    tvLastMessage.setTextColor(ContextCompat.getColor(itemView.context, R.color.icon_dark_gray))
+                    tvUnreadCount.visibility = android.view.View.GONE
+                }
+                Glide.with(civAvatar)
+                    .load(room.roomAvatar)
+                    .placeholder(R.drawable.ic_user_register)
+                    .error(R.drawable.ic_user_register)
+                    .into(civAvatar)
             }
         }
 
-        private fun formatTime(timestamp: Long): String {
-            val now = System.currentTimeMillis()
-            val diff = now - timestamp
+        private fun formatTime(timestamp: Date): String {
+            val nowMs = System.currentTimeMillis()
+            val tsMs = timestamp.time
+            val diffMs = nowMs - tsMs
 
             val min = binding.root.context.getString(R.string.min_unit)
             val hour = binding.root.context.getString(R.string.hour_unit)
             val recently = binding.root.context.getString(R.string.recently)
 
             return when {
-                diff < 60_000 -> recently
-                diff < 3600_000 -> "${diff / 60_000}$min"
-                diff < 86400_000 -> "${diff / 3600_000}${hour}"
-                else -> "dd/MM"
+                diffMs < 60_000L -> recently
+                diffMs < 3_600_000L -> "${diffMs / 60_000L}$min"
+                diffMs < 86_400_000L -> "${diffMs / 3_600_000L}$hour"
+                else -> SimpleDateFormat("dd/MM", Locale.getDefault()).format(timestamp)
             }
         }
     }
 
     inner class SearchResultViewHolder(private val binding: ItemSearchChatBinding) : RecyclerView.ViewHolder(binding.root) {
+        @SuppressLint("SetTextI18n")
         fun bind(item: ChatListItem.SearchResultItem) {
             with(binding) {
                 root.setOnClickListener { onItemClick(item.roomId) }

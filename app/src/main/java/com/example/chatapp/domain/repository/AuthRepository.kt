@@ -6,6 +6,7 @@ import com.example.chatapp.utils.DateUtils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.auth.userProfileChangeRequest
 import javax.inject.Inject
 import kotlinx.coroutines.tasks.await
 
@@ -15,7 +16,7 @@ class AuthRepository @Inject constructor(
 ) {
 
 
-    suspend fun signInWithEmailAndPassword(email: String, password: String) : Result<User> {
+    suspend fun signInWithEmailAndPassword(email: String, password: String): Result<User> {
         return try {
             val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
             Log.d("MyLog - AuthRepo", "Sign-in successful: ${result.user?.uid}")
@@ -27,7 +28,11 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun signUpWithEmailAndPassword(email: String, password: String, fullName: String) : Result<User> {
+    suspend fun signUpWithEmailAndPassword(
+        email: String,
+        password: String,
+        fullName: String
+    ): Result<User> {
         return try {
             var result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
             val firebaseUser = result.user ?: throw Exception("Failed to create user")
@@ -64,6 +69,18 @@ class AuthRepository @Inject constructor(
         firebaseAuth.signOut()
     }
 
-
-
+    suspend fun updateUserProfile(updateCurrentUser: User): Result<User> {
+        return try {
+            val profileUpdates = userProfileChangeRequest {
+                displayName = updateCurrentUser.displayName
+                //TODO: Implement photo later
+            }
+            val user = firebaseAuth.currentUser?: return Result.failure(IllegalStateException("No signed-in user"))
+            userRepository.updateUserProfile(updateCurrentUser).getOrThrow()
+            user.updateProfile(profileUpdates).await()
+            Result.success(updateCurrentUser)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

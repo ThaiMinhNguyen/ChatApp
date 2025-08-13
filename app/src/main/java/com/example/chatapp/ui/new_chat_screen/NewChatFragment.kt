@@ -23,7 +23,6 @@ import com.example.chatapp.domain.data.User
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.ChatViewModel
 import com.example.chatapp.view_model.UserViewModel
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class NewChatFragment : Fragment() {
@@ -188,9 +187,9 @@ class NewChatFragment : Fragment() {
     }
 
     private fun createChatWithSelectedUsers() {
-        //Currently create chat for the first item
         val currentUser = authViewModel.user.value
         val selectedFriend = selectedUsers[0]
+        chatViewModel.setCurrentChatUser(selectedFriend)
         chatViewModel.createRoom(currentUser!!, selectedFriend)
     }
     

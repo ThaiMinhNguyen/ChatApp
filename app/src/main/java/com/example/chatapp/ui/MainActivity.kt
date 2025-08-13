@@ -1,10 +1,9 @@
 package com.example.chatapp.ui
 
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.view.ViewTreeObserver
+import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -20,6 +19,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.chatapp.R
 import com.example.chatapp.databinding.ActivityMainBinding
 import com.example.chatapp.view_model.AuthenticationViewModel
+import com.example.chatapp.view_model.ChatViewModel
 import com.example.chatapp.view_model.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -32,6 +32,8 @@ class MainActivity : AppCompatActivity() {
 
     private val authViewModel: AuthenticationViewModel by viewModels()
     private val userViewModel: UserViewModel by viewModels()
+    private val chatViewModel: ChatViewModel by viewModels()
+
     private var isBottomNavVisibleByDestination: Boolean = false
     private var isKeyboardVisible: Boolean = false
 
@@ -42,7 +44,6 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         onBackPressedDispatcher.addCallback(this) {}
         setUpView()
-        setUpRealTimeListener()
         setUpBottomNavigation()
         setUpKeyboardListener()
         observeAuthState()
@@ -76,8 +77,25 @@ class MainActivity : AppCompatActivity() {
                         updateFriendBadgeCount(friendRequestCount)
                     }
                 }
+                launch {
+                    chatViewModel.unreadTotal.collect { total ->
+                        updateMessageBadgeCount(total)
+                    }
+                }
+                launch {
+                    chatViewModel.error.collect{
+                        if (it != null) {
+                            notifyError(it)
+                            chatViewModel.onErrorHandle()
+                        }
+                    }
+                }
             }
         }
+    }
+
+    private fun notifyError(error: String){
+        Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
     }
 
     private fun updateFriendBadgeCount(count: Int){
@@ -86,11 +104,17 @@ class MainActivity : AppCompatActivity() {
             backgroundColor = Color.RED
             badgeTextColor = Color.WHITE
             maxCharacterCount = 3
-            if(count > 0) {
-                isVisible = true
-            } else {
-                isVisible = false
-            }
+            isVisible = count > 0
+        }
+    }
+
+    private fun updateMessageBadgeCount(count: Int){
+        binding.bottomNavigation.getOrCreateBadge(R.id.homeFragment).apply {
+            number = count
+            backgroundColor = Color.RED
+            badgeTextColor = Color.WHITE
+            maxCharacterCount = 3
+            isVisible = count > 0
         }
     }
 
@@ -100,12 +124,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun setUpRealTimeListener(){
-        val currentUser = authViewModel.user.value
-        if(currentUser != null){
-            userViewModel.startListening(currentUser)
-        }
-    }
 
     private fun setUpBottomNavigation() {
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -144,6 +162,8 @@ class MainActivity : AppCompatActivity() {
                         navController.navigate(R.id.signInFragment)
                     } else {
                         userViewModel.startListening(user)
+                        chatViewModel.listenUnreadTotal(user.uid)
+                        chatViewModel.listenUnreadByRoom(user.uid)
                         if (navController.currentDestination?.id == R.id.signInFragment|| navController.currentDestination?.id == R.id.signUpFragment) {
                             navController.navigate(R.id.homeFragment)
                         }
@@ -151,5 +171,11 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        userViewModel.stopAllListeners()
+        chatViewModel.stopUnreadListeners()
     }
 }

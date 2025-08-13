@@ -72,5 +72,6 @@
     <string name="decline">Decline</string>
     <string name="agree">Accept</string>
     <string name="user_alt">User</string>
+    <string name="you">You</string>
 
 </resources>

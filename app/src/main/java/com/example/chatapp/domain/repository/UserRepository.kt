@@ -9,7 +9,7 @@ import com.example.chatapp.utils.DateUtils
 import com.example.chatapp.utils.UserUtils
 import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.SetOptions
 import javax.inject.Inject
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -19,18 +19,6 @@ import kotlinx.coroutines.tasks.await
 class UserRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
-
-    private val activeListeners = mutableListOf<ListenerRegistration>()
-
-    fun stopAllListeners() {
-        activeListeners.forEach { it.remove() }
-        activeListeners.clear()
-    }
-
-    fun stopListener(listener: ListenerRegistration) {
-        listener.remove()
-        activeListeners.remove(listener)
-    }
 
     suspend fun getCurrentUser(userId: String): Result<User> {
         Log.d("MyLog - UserRepo", "Start getCurrentUser | userId: $userId")
@@ -171,42 +159,15 @@ class UserRepository @Inject constructor(
         }
     }
 
-
-    fun listenToFriendshipChanges(user: User, onFriendshipChanged: (List<Friendship>) -> Unit): ListenerRegistration {
-        val friendshipsListener = firestore.collection("friendships")
-            .where(Filter.or(
-                Filter.equalTo("user1", user.uid),
-                Filter.equalTo("user2", user.uid)
-            ))
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("MyLog - UserRepo", "Error listening to friendships: ${error.message}")
-                    return@addSnapshotListener
-                }
-                
-                val friendships = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Friendship::class.java)
-                } ?: emptyList()
-                
-                onFriendshipChanged(friendships)
-            }
-        activeListeners.add(friendshipsListener)
-        return friendshipsListener
-    }
-
-    fun listenToUserChanges(userId: String, onUserChanged: (User?) -> Unit): ListenerRegistration {
-        val userListener = firestore.collection("users")
-            .document(userId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("MyLog - UserRepo", "Error listening to user: ${error.message}")
-                    return@addSnapshotListener
-                }
-                
-                val user = snapshot?.toObject(User::class.java)
-                onUserChanged(user)
-            }
-        activeListeners.add(userListener)
-        return userListener
+    suspend fun updateUserProfile(updateCurrentUser: User): Result<User> {
+        return try {
+            firestore.collection("users")
+                .document(updateCurrentUser.uid)
+                .set(updateCurrentUser, SetOptions.merge())
+                .await()
+            Result.success(updateCurrentUser)
+        } catch (e: Exception){
+            Result.failure(e)
+        }
     }
 }

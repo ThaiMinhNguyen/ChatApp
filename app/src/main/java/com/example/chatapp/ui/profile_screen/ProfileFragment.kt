@@ -8,6 +8,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.chatapp.R
 import com.example.chatapp.databinding.DialogLanguageSelectionBinding
@@ -15,6 +18,7 @@ import com.example.chatapp.databinding.ProfileScreenBinding
 import com.example.chatapp.utils.LanguageManager
 import com.example.chatapp.utils.setImageUrl
 import com.example.chatapp.view_model.AuthenticationViewModel
+import kotlinx.coroutines.launch
 
 class ProfileFragment : Fragment(){
     private var _binding : ProfileScreenBinding? = null
@@ -36,6 +40,7 @@ class ProfileFragment : Fragment(){
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setUpView()
+        setUpObserver()
         setUpListener()
     }
 
@@ -50,6 +55,22 @@ class ProfileFragment : Fragment(){
             binding.ivAvatar.setImageUrl(user.photoUrl)
         } else {
             Toast.makeText(requireContext(), "User not found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun setUpObserver() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    authViewModel.user.collect { user ->
+                        if (user != null) {
+                            binding.tvProfileName.text = user.displayName
+                            binding.tvProfileEmail.text = user.email
+                            binding.ivAvatar.setImageUrl(user.photoUrl)
+                        }
+                    }
+                }
+            }
         }
     }
 

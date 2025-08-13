@@ -1,5 +1,8 @@
 package com.example.chatapp.domain.data
 
+import com.google.firebase.firestore.ServerTimestamp
+import java.util.Date
+
 data class Message(
     val uid: String = "",
     val roomId: String = "",
@@ -8,7 +11,7 @@ data class Message(
     val senderAvatar: String = "",
     val content: String = "",
     val messageType: MessageType = MessageType.TEXT,
-    val timestamp: Long = System.currentTimeMillis(),
+    @ServerTimestamp val timestamp: Date? = null,
     val isRead: Boolean = false
 ) {
     constructor() : this(
@@ -19,7 +22,7 @@ data class Message(
         senderAvatar = "",
         content = "",
         messageType = MessageType.TEXT,
-        timestamp = System.currentTimeMillis(),
+        timestamp = null,
         isRead = false
     )
 }

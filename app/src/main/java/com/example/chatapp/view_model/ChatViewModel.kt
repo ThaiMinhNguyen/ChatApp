@@ -3,6 +3,7 @@ package com.example.chatapp.view_model
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.chatapp.domain.data.Message
 import com.example.chatapp.domain.data.Room
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.domain.repository.ChatRepository
@@ -26,8 +27,24 @@ class ChatViewModel @Inject constructor(
     private val _currentRoom = MutableStateFlow<Room?>(null)
     val currentRoom get() = _currentRoom
 
+    private val _currentChatUser = MutableStateFlow<User?>(null)
+    val currentChatUser get() = _currentChatUser
+
+    private val _currentMessageList = MutableStateFlow<List<Message>>(emptyList())
+    val currentMessageList get() = _currentMessageList
+
     private val _rooms = MutableStateFlow<List<Room>>(emptyList())
     val rooms get() = _rooms
+
+    private val _unreadTotal = MutableStateFlow(0)
+    val unreadTotal get() = _unreadTotal
+
+    private val _unreadByRoom = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val unreadByRoom get() = _unreadByRoom
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error get() = _error
+
 
     sealed interface NavEvent {
         data class ToDetail(val roomId: String) : NavEvent
@@ -37,6 +54,23 @@ class ChatViewModel @Inject constructor(
     val navEvents = _navEvents.asSharedFlow()
 
     private var roomJob: Job? = null
+
+    private var roomMessageJob: Job? = null
+
+    private var unreadTotalJob: Job? = null
+    private var unreadByRoomJob: Job? = null
+
+    fun onErrorHandle(){
+        _error.value = null
+    }
+
+    fun setCurrentRoom(room: Room?){
+        _currentRoom.value = room
+    }
+
+    fun setCurrentChatUser(user: User?){
+        _currentChatUser.value = user
+    }
 
     fun createRoom(currentUser: User, chosenUser: User){
         viewModelScope.launch {
@@ -48,11 +82,18 @@ class ChatViewModel @Inject constructor(
                     _currentRoom.value = result.getOrNull()
                     _navEvents.tryEmit(NavEvent.ToDetail(roomId))
                 }.onFailure {
+                    _error.value = result.exceptionOrNull().toString()
                     Log.d("MyLog - ChatViewModel", "Error creating room: ${result.exceptionOrNull().toString()}")
                 }
             } finally {
                 loading.value = false
             }
+        }
+    }
+
+    fun sendMessage(currentUser: User, chosenUserId: String, content: String){
+        viewModelScope.launch {
+            chatRepository.sendMessage(currentUser, chosenUserId, content)
         }
     }
 
@@ -65,8 +106,53 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun listenToRoomMessage(roomId: String){
+        roomMessageJob?.cancel()
+        roomMessageJob = viewModelScope.launch {
+            chatRepository.listenRoomMessages(roomId, 20).collect{ messages ->
+                _currentMessageList.value = messages
+            }
+        }
+    }
+
+    fun stopRoomMessageListener(){
+        roomMessageJob?.cancel()
+        roomMessageJob = null
+    }
+
     fun stopRoomFlowListener(){
         roomJob?.cancel()
         roomJob = null
+    }
+
+    fun listenUnreadTotal(currentUserId: String){
+        unreadTotalJob?.cancel()
+        unreadTotalJob = viewModelScope.launch {
+            chatRepository.listenUnreadTotal(currentUserId).collect { total ->
+                _unreadTotal.value = total
+            }
+        }
+    }
+
+    fun listenUnreadByRoom(currentUserId: String){
+        unreadByRoomJob?.cancel()
+        unreadByRoomJob = viewModelScope.launch {
+            chatRepository.listenUnreadByRoom(currentUserId).collect { map ->
+                _unreadByRoom.value = map
+            }
+        }
+    }
+
+    fun stopUnreadListeners(){
+        unreadTotalJob?.cancel()
+        unreadTotalJob = null
+        unreadByRoomJob?.cancel()
+        unreadByRoomJob = null
+    }
+
+    fun markMessageAsRead(roomId: String, currentUserId: String){
+        viewModelScope.launch {
+            chatRepository.updateRoomMessagesIsRead(roomId, currentUserId)
+        }
     }
 }

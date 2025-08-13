@@ -17,9 +17,10 @@ import com.example.chatapp.R
 import com.example.chatapp.databinding.HomeScreenBinding
 import com.example.chatapp.domain.data.ChatListItem
 import com.example.chatapp.domain.data.Room
+import com.example.chatapp.domain.data.User
+import com.example.chatapp.utils.UserUtils
 import com.example.chatapp.view_model.*
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 
@@ -34,6 +35,11 @@ class HomeFragment : Fragment() {
     private val userViewModel : UserViewModel by activityViewModels()
 
     private var isSearchMode = false
+
+    private var roomById: Map<String, Room> = emptyMap()
+    private var userById: Map<String, User> = emptyMap()
+
+    private var roomItemList: List<ChatListItem> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -59,6 +65,7 @@ class HomeFragment : Fragment() {
     private fun setUpRealTimeListener(){
         val user = authenticationViewModel.user.value
         chatViewModel.listenToRoomFlow(user!!)
+        chatViewModel.listenUnreadByRoom(user.uid)
     }
 
     private fun setUpObserver(){
@@ -68,32 +75,58 @@ class HomeFragment : Fragment() {
                     combine(
                         chatViewModel.rooms,
                         userViewModel.people,
-                        authenticationViewModel.user
-                    ) { rooms, people, currentUser ->
+                        authenticationViewModel.user,
+                        chatViewModel.unreadByRoom
+                    ) { rooms, people, currentUser, unread ->
                         val currentUid = currentUser?.uid
-                        val userById = people.associateBy { it.user.uid }
+                        userById = people.associate { it.user.uid to it.user }
+                        roomById = rooms.associateBy { it.participants.sorted().joinToString("_") }
+                        val localUserById = userById
                         rooms.map { room ->
                             val otherUid = room.participants.firstOrNull { it != currentUid } ?: currentUid
-                            val otherUser = otherUid?.let { uid -> userById[uid]?.user }
+                            val otherUser = otherUid?.let { uid -> localUserById[uid] }
+                            var lastMessageDisplay = room.lastMessage?:""
+                            val selfSender = requireContext().getString(R.string.you)
+                            if(room.lastMessageSenderId == currentUid){
+                                lastMessageDisplay = "$selfSender: " + room.lastMessage
+                            }
                             ChatListItem.RoomItem(
                                 room.copy(
                                     roomName = room.roomName ?: otherUser?.displayName,
-                                    roomAvatar = room.roomAvatar ?: otherUser?.photoUrl
-                                )
+                                    roomAvatar = room.roomAvatar ?: otherUser?.photoUrl,
+                                    lastMessage = lastMessageDisplay
+                                ),
+                                unread = unread[room.participants.sorted().joinToString("_")] ?: 0
                             )
                         }
                     }.collect { roomItems ->
+                        roomItemList = roomItems.toList()
                         if(!isSearchMode) {
                             chatListAdapter.submitList(roomItems)
                         }
                     }
                 }
+                launch {
+                    chatViewModel.rooms.collect { rooms ->
+                        roomById = rooms.associateBy { it.participants.sorted().joinToString("_") }
+                    }
+                }
+                launch {
+                    userViewModel.people.collect { people ->
+                        userById = people.associate { it.user.uid to it.user }
+                    }
+                }
+
             }
         }
     }
 
     private fun setUpRecyclerView() {
-        chatListAdapter = ChatListAdapter({chatId->navigateToDetailChat(chatId)})
+        chatListAdapter = ChatListAdapter(
+            {
+                chatId->navigateToDetailChat(chatId)
+            }
+        )
         binding.rvChatList.apply {
             adapter = chatListAdapter
             layoutManager = LinearLayoutManager(context).apply {
@@ -105,6 +138,14 @@ class HomeFragment : Fragment() {
     }
 
     private fun navigateToDetailChat(roomId: String) {
+        val room = roomById[roomId]
+        chatViewModel.setCurrentRoom(room)
+        if(room?.roomName == null){
+            val currentUser = authenticationViewModel.user.value
+            val otherUserId = UserUtils.getOtherId(roomId, currentUser!!.uid)
+            val otherUser = if (otherUserId != null) userById[otherUserId] else null
+            chatViewModel.setCurrentChatUser(otherUser)
+        }
         val action = HomeFragmentDirections.actionHomeFragmentToDetailChatFragment(roomId)
         findNavController().navigate(action)
     }
@@ -162,19 +203,7 @@ class HomeFragment : Fragment() {
         binding.tvCancel.visibility = View.GONE
         binding.llNoSearchResult.visibility = View.GONE
         binding.etSearch.clearFocus()
-        val currentUid = authenticationViewModel.user.value?.uid
-        val userById = userViewModel.people.value.associateBy { it.user.uid }
-        val roomItems = chatViewModel.rooms.value.map { room ->
-            val otherUid = room.participants.firstOrNull { it != currentUid } ?: currentUid
-            val otherUser = otherUid?.let { uid -> userById[uid]?.user }
-            ChatListItem.RoomItem(
-                room.copy(
-                    roomName = room.roomName ?: otherUser?.displayName,
-                    roomAvatar = room.roomAvatar ?: otherUser?.photoUrl
-                )
-            )
-        }
-        chatListAdapter.submitList(roomItems)
+        chatListAdapter.submitList(roomItemList)
     }
 
 

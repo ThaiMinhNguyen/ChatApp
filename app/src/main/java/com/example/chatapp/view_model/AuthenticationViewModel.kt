@@ -103,4 +103,22 @@ class AuthenticationViewModel @Inject constructor(
         authRepository.signOut()
     }
 
+    fun updateUserProfile(updateUser: User){
+        viewModelScope.launch {
+            _loading.value = true
+            try {
+                authRepository.updateUserProfile(updateUser)
+                    .onSuccess {
+                        Log.d("MyLog - AuthViewModel", "Update user profile successfully")
+                        _user.value = it
+                    }
+                    .onFailure {
+                        Log.e("MyLog - AuthViewModel", "Update user profile failed")
+                    }
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
 }
