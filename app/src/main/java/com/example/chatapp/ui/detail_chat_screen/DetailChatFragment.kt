@@ -129,9 +129,11 @@ class DetailChatFragment : Fragment() {
                 }
                 launch {
                     chatViewModel.currentMessageList.collect{
-
                         messageList = it
-                        messageAdapter.submitList(messageList)
+                        messageAdapter.submitList(it)
+//                        if(it.lastOrNull()?.senderId == authViewModel.user.value?.uid){
+//                            scrollToBottom()
+//                        }
                     }
                 }
             }
@@ -192,7 +194,9 @@ class DetailChatFragment : Fragment() {
 
     private fun scrollToBottom(){
         if(messageAdapter.itemCount > 0){
-            binding.rvChatMessages.scrollToPosition(messageAdapter.itemCount - 1)
+            binding.rvChatMessages.post {
+                binding.rvChatMessages.smoothScrollBy(0, Int.MAX_VALUE)
+            }
         }
     }
 

@@ -168,6 +168,7 @@ class ChatRepository @Inject constructor(
             batch.commit().await()
             Result.success(Unit)
         } catch (e: Exception){
+            Log.e("MyLog - ChatRepo", e.toString())
             Result.failure(e)
         }
 
