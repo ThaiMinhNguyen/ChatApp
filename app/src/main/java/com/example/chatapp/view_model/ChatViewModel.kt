@@ -3,17 +3,20 @@ package com.example.chatapp.view_model
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.chatapp.domain.data.ChatListItem
 import com.example.chatapp.domain.data.Message
 import com.example.chatapp.domain.data.Room
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.domain.repository.ChatRepository
 import com.example.chatapp.utils.UserUtils
+import com.google.firebase.firestore.DocumentSnapshot
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import retrofit2.http.Query
 import javax.inject.Inject
 
 @HiltViewModel
@@ -45,6 +48,12 @@ class ChatViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error get() = _error
 
+    private val _searchResults = MutableStateFlow<List<ChatListItem.SearchResultItem>>(emptyList())
+    val searchResults get() = _searchResults
+
+    private var oldestDoc: DocumentSnapshot? = null
+    private var isLoadingMore = false
+    private var hasMorePage = true
 
     sealed interface NavEvent {
         data class ToDetail(val roomId: String) : NavEvent
@@ -109,8 +118,38 @@ class ChatViewModel @Inject constructor(
     fun listenToRoomMessage(roomId: String){
         roomMessageJob?.cancel()
         roomMessageJob = viewModelScope.launch {
-            chatRepository.listenRoomMessages(roomId, 20).collect{ messages ->
-                _currentMessageList.value = messages
+            chatRepository.listenRoomMessages(roomId, 20).collect{ (messages, lastDoc) ->
+                val latestAsc = messages.asReversed()
+                val old =_currentMessageList.value
+                val merged = (old + latestAsc).distinctBy { it.uid }
+                _currentMessageList.value = merged
+                oldestDoc = lastDoc
+            }
+        }
+    }
+
+    fun loadMore() {
+        val roomId = _currentRoom.value?.participants?.sorted()?.joinToString("_") ?: return
+        if (isLoadingMore || !hasMorePage || oldestDoc == null) return
+
+        viewModelScope.launch {
+            isLoadingMore = true
+            try {
+                chatRepository.loadMore(roomId, 20, oldestDoc)
+                    .onSuccess { (olderAsc, lastDoc) ->
+                        if (olderAsc.isEmpty()) {
+                            hasMorePage  = false
+                        } else {
+                            val cur = _currentMessageList.value
+                            _currentMessageList.value = (olderAsc + cur).distinctBy { it.uid }
+                            oldestDoc = lastDoc
+                        }
+                    }
+                    .onFailure { e ->
+                        _error.value = e.message
+                    }
+            } finally {
+                isLoadingMore = false
             }
         }
     }
@@ -153,6 +192,15 @@ class ChatViewModel @Inject constructor(
     fun markMessageAsRead(roomId: String, currentUserId: String){
         viewModelScope.launch {
             chatRepository.updateRoomMessagesIsRead(roomId, currentUserId)
+        }
+    }
+
+
+    fun searchMessages(currentUserId: String, query: String) {
+        viewModelScope.launch {
+            chatRepository.searchMessagesMatch(currentUserId, query)
+                .onSuccess { _searchResults.value = it }
+                .onFailure { _searchResults.value = emptyList() }
         }
     }
 }

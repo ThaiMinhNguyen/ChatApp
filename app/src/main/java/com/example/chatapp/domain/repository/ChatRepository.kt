@@ -1,15 +1,20 @@
 package com.example.chatapp.domain.repository
 
 import android.util.Log
+import com.example.chatapp.domain.data.ChatListItem
 import com.example.chatapp.domain.data.Message
 import com.example.chatapp.domain.data.Room
 import com.example.chatapp.domain.data.RoomType
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.utils.DateUtils
 import com.example.chatapp.utils.UserUtils
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.Query
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
@@ -168,24 +173,43 @@ class ChatRepository @Inject constructor(
 
     }
 
-    fun listenRoomMessages(roomId: String, pageSize: Int, startAfter: Long? = null) =
+    fun listenRoomMessages(roomId: String, pageSize: Int) =
         callbackFlow {
-            var query = firestore.collection("rooms")
+            val query = firestore.collection("rooms")
                 .document(roomId)
                 .collection("messages")
-                .orderBy("timestamp")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
                 .limit(pageSize.toLong())
-
-            if (startAfter != null) query = query.startAfter(startAfter)
 
             val reg = query.addSnapshotListener { snap, err ->
                 if (err != null) return@addSnapshotListener
                 val list = snap?.toObjects(Message::class.java).orEmpty()
-                trySend(list)
+                val lastDoc = snap?.documents?.lastOrNull()
+                trySend(list to lastDoc)
             }
 
             awaitClose { reg.remove() }
         }
+
+    suspend fun loadMore(roomId: String, pageSize: Int = 20,
+        oldestDoc: DocumentSnapshot? = null): Result<Pair<List<Message>, DocumentSnapshot?>> {
+        return try {
+            val ref = firestore.collection("rooms").document(roomId)
+                .collection("messages")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+
+            val snap = (if (oldestDoc != null) ref.startAfter(oldestDoc) else ref)
+                .limit(pageSize.toLong())
+                .get()
+                .await()
+
+            val pageAsc = snap.toObjects(Message::class.java).asReversed()
+            val lastDoc = snap.documents.lastOrNull()
+            Result.success(pageAsc to lastDoc)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     suspend fun updateRoomMessagesIsRead(roomId: String, currentUserId: String) : Result<Unit>{
         return try {
@@ -216,6 +240,64 @@ class ChatRepository @Inject constructor(
                 .await()
 
             Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun searchMessagesMatch(
+        currentUserId: String,
+        query: String,
+        limitPerRoom: Int = 20
+    ): Result<List<ChatListItem.SearchResultItem>> {
+        if (query.isBlank()) return Result.success(emptyList())
+        return try {
+            val roomsSnap = firestore.collection("rooms")
+                .whereArrayContains("participants", currentUserId)
+                .get()
+                .await()
+
+            val roomDocs = roomsSnap.documents
+            if (roomDocs.isEmpty()) return Result.success(emptyList())
+
+            val end = query + '\uf8ff'
+
+            //Query từng room lấy match messages
+            val results = coroutineScope {
+                roomDocs.map { roomDoc ->
+                    async {
+                        val roomId = roomDoc.id
+
+                        val participants = (roomDoc.get("participants") as? List<*>)?.filterIsInstance<String>().orEmpty()
+                        val otherId = participants.firstOrNull { it != currentUserId } ?: currentUserId
+
+                        val msgSnap = firestore.collection("rooms")
+                            .document(roomId)
+                            .collection("messages")
+                            .orderBy("content")
+                            .whereGreaterThanOrEqualTo("content", query)
+                            .whereLessThanOrEqualTo("content", end)
+                            .limit(limitPerRoom.toLong())
+                            .get()
+                            .await()
+
+                        val matchCount = msgSnap.size()
+
+                        if (matchCount > 0) {
+                            ChatListItem.SearchResultItem(
+                                roomId = roomId,
+                                contactId = otherId,
+                                contactName = "",
+                                contactAvatar = "",
+                                messageMatch = matchCount
+                            )
+                        } else null
+                    }
+                }.mapNotNull { it.await() }
+            }
+
+            val sorted = results.sortedByDescending { it.messageMatch }
+            Result.success(sorted)
         } catch (e: Exception) {
             Result.failure(e)
         }

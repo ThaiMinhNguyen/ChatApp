@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -17,6 +18,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.chatapp.R
 import com.example.chatapp.databinding.DetailChatScreenBinding
@@ -105,6 +107,7 @@ class DetailChatFragment : Fragment() {
                     val currentUser = authViewModel.user.value
                     val otherUserId = UserUtils.getOtherId(conversationId, currentUser!!.uid)
                     chatViewModel.sendMessage(currentUser, otherUserId!!, content)
+                    scrollToBottom()
                     hideKeyboard()
                 }
             }
@@ -126,8 +129,9 @@ class DetailChatFragment : Fragment() {
                 }
                 launch {
                     chatViewModel.currentMessageList.collect{
+
                         messageList = it
-                        messageAdapter.submitList(it)
+                        messageAdapter.submitList(messageList)
                     }
                 }
             }
@@ -169,9 +173,27 @@ class DetailChatFragment : Fragment() {
             adapter = messageAdapter
             layoutManager = LinearLayoutManager(context).apply {
                 orientation = LinearLayoutManager.VERTICAL
+                stackFromEnd = true
             }
         }
-        messageAdapter.submitList(messageList)
+        val lm = binding.rvChatMessages.layoutManager as LinearLayoutManager
+        binding.rvChatMessages.addOnScrollListener(
+            object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    val firstPos = lm.findFirstVisibleItemPosition()
+                    if(firstPos <= 0){
+                        chatViewModel.loadMore()
+                    }
+                }
+            }
+        )
+    }
+
+    private fun scrollToBottom(){
+        if(messageAdapter.itemCount > 0){
+            binding.rvChatMessages.scrollToPosition(messageAdapter.itemCount - 1)
+        }
     }
 
 

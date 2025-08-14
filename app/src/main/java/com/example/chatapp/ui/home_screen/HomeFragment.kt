@@ -2,6 +2,8 @@ package com.example.chatapp.ui.home_screen
 
 import android.content.Context
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,7 +21,9 @@ import com.example.chatapp.domain.data.ChatListItem
 import com.example.chatapp.domain.data.Room
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.utils.UserUtils
-import com.example.chatapp.view_model.*
+import com.example.chatapp.view_model.AuthenticationViewModel
+import com.example.chatapp.view_model.ChatViewModel
+import com.example.chatapp.view_model.UserViewModel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -116,17 +120,28 @@ class HomeFragment : Fragment() {
                         userById = people.associate { it.user.uid to it.user }
                     }
                 }
-
+                launch {
+                    chatViewModel.searchResults.collect{ searchResults ->
+                        val completeSearchResult = searchResults.map {
+                            it.copy(
+                                contactName = userById[it.contactId]?.displayName ?: "Unknown",
+                                contactAvatar = userById[it.contactId]?.photoUrl ?: ""
+                            )
+                        }
+                        if(completeSearchResult.isEmpty()){
+                            onNoResultsFound()
+                        }
+                        chatListAdapter.submitList(completeSearchResult)
+                    }
+                }
             }
         }
     }
 
     private fun setUpRecyclerView() {
-        chatListAdapter = ChatListAdapter(
-            {
-                chatId->navigateToDetailChat(chatId)
-            }
-        )
+        chatListAdapter = ChatListAdapter { chatId ->
+            navigateToDetailChat(chatId)
+        }
         binding.rvChatList.apply {
             adapter = chatListAdapter
             layoutManager = LinearLayoutManager(context).apply {
@@ -153,6 +168,9 @@ class HomeFragment : Fragment() {
     private fun setUpListener(){
         setUpSearchListener()
         setUpCancelSearchListener()
+        binding.btnCreateNewChat.setOnClickListener {
+            findNavController().navigate(R.id.newChatFragment)
+        }
     }
 
     private fun setUpCancelSearchListener() {
@@ -161,39 +179,45 @@ class HomeFragment : Fragment() {
             switchToNormalMode()
         }
 
-        binding.btnCreateNewChat.setOnClickListener {
-            findNavController().navigate(R.id.newChatFragment)
-        }
     }
 
     private fun setUpSearchListener(){
         binding.etSearch.setOnFocusChangeListener{ _, hasFocus ->
             if (hasFocus) {
                 switchToSearchMode()
-                submitFakeSearchResults()
             } else {
                 //Hide keyboard when focus is lost
                 (requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
                     ?.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
             }
         }
+
+        binding.etSearch.addTextChangedListener(
+            object : TextWatcher{
+                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                }
+
+                override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                }
+
+                override fun afterTextChanged(p0: Editable?) {
+                    val query = p0.toString()
+                    if(query.isBlank()){
+                        chatListAdapter.submitList(emptyList())
+                    } else {
+                        val user = authenticationViewModel.user.value
+                        chatViewModel.searchMessages(user!!.uid, query)
+                    }
+                }
+
+            }
+        )
     }
 
-    private fun submitFakeSearchResults() {
-        val results = List(5) { index ->
-            ChatListItem.SearchResultItem(
-                roomId = "conv$index",
-                contactId = "contact$index",
-                contactName = "Contact $index",
-                contactAvatar = "https://example.com/avatar$index.png",
-                messageMatch = index
-            )
-        }
-        chatListAdapter.submitList(results)
-    }
 
     private fun switchToSearchMode() {
         isSearchMode = true
+        chatListAdapter.submitList(emptyList())
         binding.tvCancel.visibility = View.VISIBLE
     }
 
@@ -208,7 +232,12 @@ class HomeFragment : Fragment() {
 
 
     private fun onNoResultsFound(){
-        binding.llNoSearchResult.visibility = View.VISIBLE
+        if(isSearchMode) {
+            binding.llNoSearchResult.visibility = View.VISIBLE
+        } else {
+            binding.llNoSearchResult.visibility = View.GONE
+
+        }
     }
 
     override fun onDestroyView() {
