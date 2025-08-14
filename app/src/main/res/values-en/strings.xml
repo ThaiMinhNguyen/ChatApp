@@ -64,6 +64,7 @@
     <string name="name_hint">Your name</string>
     <string name="select_language">Choose your language</string>
     <string name="english">English</string>
+    <string name="notification_permission_settings_hint">You have notification setting off. Open setting to turn on?</string>
     <string name="ok">OK</string>
     <string name="min_unit">m</string>
     <string name="hour_unit">h</string>
@@ -73,5 +74,7 @@
     <string name="agree">Accept</string>
     <string name="user_alt">User</string>
     <string name="you">You</string>
+    <string name="notification_permission_rationale">This app need permission to send notification</string>
+    <string name="open_settings">Open setting</string>
 
 </resources>

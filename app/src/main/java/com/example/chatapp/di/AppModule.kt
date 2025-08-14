@@ -1,7 +1,9 @@
 package com.example.chatapp.di
 
+import android.content.Context
 import com.example.chatapp.domain.repository.AuthRepository
 import com.example.chatapp.domain.repository.UserRepository
+import com.example.chatapp.utils.Prefs
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -9,6 +11,7 @@ import com.google.firebase.firestore.firestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -37,9 +40,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(firebaseAuth: FirebaseAuth, userRepository: UserRepository): AuthRepository {
-        return AuthRepository(firebaseAuth, userRepository)
+    fun provideAuthRepository(firebaseAuth: FirebaseAuth, userRepository: UserRepository, prefs: Prefs): AuthRepository {
+        return AuthRepository(firebaseAuth, userRepository, prefs)
     }
+
+    @Provides
+    @Singleton
+    fun providePrefs(@ApplicationContext context: Context): Prefs = Prefs(context)
 
 
 

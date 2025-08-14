@@ -53,19 +53,6 @@ class UserViewModel @Inject constructor(
         }
     }
 
-//    fun declineFriendRequest(currentUser: User, sendToUser: User){
-//        _loading.value = true
-//        viewModelScope.launch {
-//            val result = userRepository.declineFriendRequest(currentUser, sendToUser)
-//            if (result.isSuccess){
-//                Log.d("MyLog - UserViewModel", "Send add friend successfully")
-//            } else {
-//                Log.d("MyLog - UserViewModel", "Send add friend failed")
-//            }
-//            _loading.value = false
-//        }
-//    }
-
     override fun onCleared() {
         super.onCleared()
         stopAllListeners()

@@ -72,4 +72,7 @@
     <string name="agree">Đồng ý</string>
     <string name="user_alt">Người dùng</string>
     <string name="you">Bạn</string>
+    <string name="notification_permission_rationale">Ứng dụng cần quyền gửi thông báo để báo tin nhắn mới.</string>
+    <string name="notification_permission_settings_hint">Bạn đã tắt quyền thông báo. Mở cài đặt để bật lại?</string>
+    <string name="open_settings">Mở cài đặt</string>
 </resources>

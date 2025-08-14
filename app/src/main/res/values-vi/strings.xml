@@ -63,6 +63,7 @@
     <string name="name_hint">Tên của bạn</string>
     <string name="select_language">Chọn ngôn ngữ</string>
     <string name="english">Tiếng Anh</string>
+    <string name="notification_permission_settings_hint">Bạn đã tắt quyền thông báo. Mở cài đặt để bật lại?</string>
     <string name="ok">OK</string>
     <string name="min_unit">p</string>
     <string name="hour_unit">g</string>
@@ -72,4 +73,6 @@
     <string name="agree">Đồng ý</string>
     <string name="user_alt">Người dùng</string>
     <string name="you">Bạn</string>
+    <string name="notification_permission_rationale">Ứng dụng cần quyền gửi thông báo để báo tin nhắn mới.</string>
+    <string name="open_settings">Mở cài đặt</string>
 </resources>

@@ -107,7 +107,7 @@ class DetailChatFragment : Fragment() {
                     val currentUser = authViewModel.user.value
                     val otherUserId = UserUtils.getOtherId(conversationId, currentUser!!.uid)
                     chatViewModel.sendMessage(currentUser, otherUserId!!, content)
-                    scrollToBottom()
+//                    scrollToBottom()
                     hideKeyboard()
                 }
             }
@@ -131,9 +131,9 @@ class DetailChatFragment : Fragment() {
                     chatViewModel.currentMessageList.collect{
                         messageList = it
                         messageAdapter.submitList(it)
-//                        if(it.lastOrNull()?.senderId == authViewModel.user.value?.uid){
-//                            scrollToBottom()
-//                        }
+                        if(it.lastOrNull()?.senderId == authViewModel.user.value?.uid){
+                            scrollToBottom()
+                        }
                     }
                 }
             }

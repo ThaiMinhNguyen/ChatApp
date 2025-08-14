@@ -98,6 +98,20 @@ class AuthenticationViewModel @Inject constructor(
 
     fun getCurrentFirebaseUser() = authRepository.getCurrentUser()
     
+    fun restoreSessionIfPossible() {
+        viewModelScope.launch {
+            _loading.value = true
+            try {
+                val fbUser = authRepository.getCurrentUser()
+                val uid = fbUser?.uid ?: return@launch
+                authRepository.loadUserByUid(uid)
+                    .onSuccess { loaded -> _user.value = loaded }
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+    
     fun signOut() {
         _user.value = null
         authRepository.signOut()

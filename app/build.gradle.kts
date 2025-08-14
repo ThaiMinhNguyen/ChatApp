@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+    implementation(libs.firebase.messaging)
 
     //Splash screen
     implementation(libs.androidx.core.splashscreen)
@@ -83,5 +84,5 @@ dependencies {
     //Circle Image View
     implementation(libs.circleimageview)
 
-    implementation("com.github.dhaval2404:imagepicker:2.1")
+    implementation(libs.imagepicker)
 }

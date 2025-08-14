@@ -2,17 +2,23 @@ package com.example.chatapp.domain.repository
 
 import android.util.Log
 import com.example.chatapp.domain.data.User
+import com.example.chatapp.utils.Prefs
 import com.example.chatapp.utils.DateUtils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.auth.userProfileChangeRequest
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.messaging.FirebaseMessaging
 import javax.inject.Inject
 import kotlinx.coroutines.tasks.await
 
 class AuthRepository @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val prefs: Prefs
 ) {
 
 
@@ -22,6 +28,11 @@ class AuthRepository @Inject constructor(
             Log.d("MyLog - AuthRepo", "Sign-in successful: ${result.user?.uid}")
             val user = userRepository.getCurrentUser(result.user!!.uid).getOrNull()
                 ?: return Result.failure(Exception("User not found"))
+            FirebaseMessaging.getInstance().token.addOnSuccessListener{ token ->
+                val uid = user.uid
+                val ref = FirebaseFirestore.getInstance().collection("users").document(uid)
+                ref.set(mapOf("fcmTokens" to FieldValue.arrayUnion(token)), SetOptions.merge())
+            }
             Result.success(user)
         } catch (e: Exception) {
             Result.failure(e)
@@ -65,7 +76,18 @@ class AuthRepository @Inject constructor(
         return firebaseAuth.currentUser
     }
 
+    suspend fun loadUserByUid(uid: String): Result<User> {
+        return userRepository.getCurrentUser(uid)
+    }
+
     fun signOut() {
+        val uidBefore = firebaseAuth.currentUser?.uid
+        FirebaseMessaging.getInstance().token.addOnSuccessListener{ token ->
+            val uid = uidBefore ?: return@addOnSuccessListener
+            val ref = FirebaseFirestore.getInstance().collection("users").document(uid)
+            ref.set(mapOf("fcmTokens" to FieldValue.arrayRemove(token)), SetOptions.merge())
+        }
+        prefs.clear()
         firebaseAuth.signOut()
     }
 

@@ -1,13 +1,21 @@
 package com.example.chatapp.ui
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -18,11 +26,14 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.chatapp.R
 import com.example.chatapp.databinding.ActivityMainBinding
+import com.example.chatapp.utils.Prefs
+import com.example.chatapp.utils.UserUtils
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.ChatViewModel
 import com.example.chatapp.view_model.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
 @AndroidEntryPoint
@@ -34,6 +45,8 @@ class MainActivity : AppCompatActivity() {
     private val userViewModel: UserViewModel by viewModels()
     private val chatViewModel: ChatViewModel by viewModels()
 
+    @Inject lateinit var prefs: Prefs
+
     private var isBottomNavVisibleByDestination: Boolean = false
     private var isKeyboardVisible: Boolean = false
 
@@ -43,11 +56,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         onBackPressedDispatcher.addCallback(this) {}
+        requestNotificationPermission()
+        authViewModel.restoreSessionIfPossible()
         setUpView()
         setUpBottomNavigation()
         setUpKeyboardListener()
         observeAuthState()
         setUpObserver()
+        handleNotificationIntentIfAny(intent)
     }
 
     private fun setUpObserver() {
@@ -161,6 +177,9 @@ class MainActivity : AppCompatActivity() {
                     if (user == null) {
                         navController.navigate(R.id.signInFragment)
                     } else {
+                        // Save session hint
+                        prefs.setRememberLogin(true)
+                        prefs.saveLastUid(user.uid)
                         userViewModel.startListening(user)
                         chatViewModel.listenUnreadTotal(user.uid)
                         chatViewModel.listenUnreadByRoom(user.uid)
@@ -177,5 +196,85 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         userViewModel.stopAllListeners()
         chatViewModel.stopUnreadListeners()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleNotificationIntentIfAny(intent)
+    }
+
+
+    private fun handleNotificationIntentIfAny(intent: Intent) {
+        val roomId = intent.getStringExtra("roomId") ?: return
+        intent.removeExtra("roomId")
+        Log.d("MyLog - MainActivity", roomId)
+        val currentUser = authViewModel.user.value ?: return
+        val otherId = UserUtils.getOtherId(roomId, currentUser.uid)
+        val otherUser = userViewModel.people.value
+            .firstOrNull { it.user.uid == otherId }?.user
+        val room = chatViewModel.rooms.value.filter { it.participants.sorted().joinToString("_") == roomId }.firstOrNull()
+        chatViewModel.setCurrentRoom(room)
+        chatViewModel.setCurrentChatUser(otherUser)
+        val args = Bundle().apply {
+            putString("chatConversationId", roomId)
+        }
+        if (::navController.isInitialized) {
+
+            navController.navigate(R.id.detailChatFragment, args)
+        }
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { isGranted: Boolean ->
+        if (!isGranted) {
+            if (!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                showOpenNotificationSettingsDialog()
+            }
+        }
+    }
+
+    private fun requestNotificationPermission(){
+        when {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED -> {
+            }
+            shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
+                showNotificationPermissionRationaleDialog()
+            }
+            else -> {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    private fun showNotificationPermissionRationaleDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.app_name))
+            .setMessage(getString(R.string.notification_permission_rationale))
+            .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
+                dialog.dismiss()
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun showOpenNotificationSettingsDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.app_name))
+            .setMessage(getString(R.string.notification_permission_settings_hint))
+            .setPositiveButton(getString(R.string.open_settings)) { dialog, _ ->
+                dialog.dismiss()
+                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                }
+                startActivity(intent)
+            }
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 }
