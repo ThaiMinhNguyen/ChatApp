@@ -28,6 +28,7 @@ import com.example.chatapp.domain.data.User
 import com.example.chatapp.utils.UserUtils
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.ChatViewModel
+import com.example.chatapp.view_model.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -39,6 +40,7 @@ class DetailChatFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val chatViewModel: ChatViewModel by activityViewModels()
+    private val userViewModel: UserViewModel by activityViewModels()
     private val authViewModel: AuthenticationViewModel by activityViewModels()
 
     private lateinit var messageAdapter: MessageListAdapter
@@ -86,8 +88,22 @@ class DetailChatFragment : Fragment() {
     private fun setUpView() {
         user = chatViewModel.currentChatUser.value
         val currentUser = authViewModel.user.value
+        getChatUser()
         chatViewModel.markMessageAsRead(conversationId, currentUser!!.uid)
         updateUI()
+    }
+
+    private fun getChatUser(){
+        val currentUser = authViewModel.user.value
+        if(user == null){
+            val otherUserId = UserUtils.getOtherId(conversationId, currentUser!!.uid)
+            val otherUser = userViewModel.people.value.find { it.user.uid == otherUserId }?.user
+            if(otherUser == null){
+                Log.d("MyLog - DetailChat", "getChatUser : null")
+            }
+            chatViewModel.setCurrentChatUser(otherUser)
+            Log.d("MyLog - DetailChat", otherUser?.displayName?: "Unknown")
+        }
     }
 
     private fun setUpListener(){
@@ -134,6 +150,13 @@ class DetailChatFragment : Fragment() {
                         if(it.lastOrNull()?.senderId == authViewModel.user.value?.uid){
                             scrollToBottom()
                         }
+                        val currentUser = authViewModel.user.value
+                        chatViewModel.markMessageAsRead(conversationId, currentUser!!.uid)
+                    }
+                }
+                launch {
+                    userViewModel.people.collect{
+                        getChatUser()
                     }
                 }
             }

@@ -40,8 +40,12 @@
         tools:layout="@layout/detail_chat_screen">
         <argument
             android:name="chatConversationId"
-            app:argType="string"
-            />
+            app:argType="string" />
+        <deepLink
+            android:id="@+id/deepLink"
+            android:autoVerify="true"
+            app:action="ACTION_VIEW"
+            app:uri="chatapp://chat/{chatConversationId}" />
     </fragment>
 
     <fragment
@@ -58,7 +62,13 @@
         android:id="@+id/friendFragment"
         android:name="com.example.chatapp.ui.friend_screen.FriendFragment"
         android:label="FriendFragment"
-        tools:layout="@layout/friend_screen"/>
+        tools:layout="@layout/friend_screen">
+        <deepLink
+            android:id="@+id/deepLink2"
+            android:autoVerify="true"
+            app:action="ACTION_VIEW"
+            app:uri="chatapp://friends" />
+    </fragment>
 
     <fragment
         android:id="@+id/profileFragment"

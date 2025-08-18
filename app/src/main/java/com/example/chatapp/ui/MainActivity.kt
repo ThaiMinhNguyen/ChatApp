@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -26,13 +27,14 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.chatapp.R
 import com.example.chatapp.databinding.ActivityMainBinding
+import com.example.chatapp.ui.home_screen.HomeFragmentDirections
 import com.example.chatapp.utils.Prefs
-import com.example.chatapp.utils.UserUtils
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.ChatViewModel
 import com.example.chatapp.view_model.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 
@@ -50,6 +52,7 @@ class MainActivity : AppCompatActivity() {
     private var isBottomNavVisibleByDestination: Boolean = false
     private var isKeyboardVisible: Boolean = false
 
+    private var hasDeepLink = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -63,7 +66,60 @@ class MainActivity : AppCompatActivity() {
         setUpKeyboardListener()
         observeAuthState()
         setUpObserver()
-        handleNotificationIntentIfAny(intent)
+
+        // Check if có Deep Link trong onCreate
+        hasDeepLink = intent.data != null
+        Log.d("MyLog - MainActivity", "onCreate hasDeepLink: $hasDeepLink")
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent) // Quan trọng!
+
+        // Debug Deep Link
+        intent.data?.let { uri ->
+            Log.d("MyLog - MainActivity", "Deep link received: $uri")
+        }
+
+        // Handle Deep Link
+        if (intent.data != null) {
+            hasDeepLink = true
+            handleDeepLink()
+            Log.d("MyLog - MainActivity", "Handling deep link in onNewIntent, hasDeepLink: $hasDeepLink")
+
+        }
+    }
+
+    private fun handleDeepLink(){
+        if (::navController.isInitialized) {
+            Log.d("MyLog - MainActivity", "NavController ready, calling handleDeepLink")
+            navController.handleDeepLink(intent)
+
+            val uri = intent.data
+            if (uri?.scheme == "chatapp" && uri.host == "chat") {
+                val roomId = uri.lastPathSegment
+                if (!roomId.isNullOrEmpty()) {
+                    Log.d("MyLog - MainActivity", "Manual navigation to room: $roomId")
+                    binding.root.post {
+                        try {
+                            val action = HomeFragmentDirections.actionHomeFragmentToDetailChatFragment(roomId)
+                            navController.navigate(action)
+                            hasDeepLink = false
+                            Log.d("MyLog - MainActivity", "Navigation completed successfully")
+                        } catch (e: Exception) {
+                            Log.e("MyLog - MainActivity", "Navigation failed: ${e.message}")
+                        }
+                    }
+                    hasDeepLink = false
+                }
+            } else if (uri?.scheme == "chatapp" && uri.host == "friends") {
+                Log.d("MyLog - MainActivity", "Manual navigation to friends")
+                navController.navigate(R.id.friendFragment)
+                hasDeepLink = false
+            }
+        } else {
+            Log.d("MyLog - MainActivity", "NavController not initialized")
+        }
     }
 
     private fun setUpObserver() {
@@ -174,16 +230,20 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 authViewModel.user.collect{ user ->
+                    Log.d("MyLog - MainActivity", "observeAuthState: user=${user?.displayName}, hasDeepLink=$hasDeepLink")
                     if (user == null) {
                         navController.navigate(R.id.signInFragment)
                     } else {
-                        // Save session hint
                         prefs.setRememberLogin(true)
                         prefs.saveLastUid(user.uid)
                         userViewModel.startListening(user)
                         chatViewModel.listenUnreadTotal(user.uid)
                         chatViewModel.listenUnreadByRoom(user.uid)
-                        if (navController.currentDestination?.id == R.id.signInFragment|| navController.currentDestination?.id == R.id.signUpFragment) {
+                        if (navController.currentDestination?.id == R.id.signInFragment || navController.currentDestination?.id == R.id.signUpFragment) {
+
+                                Log.d("MyLog - MainActivity", "Trigger user observe: Handle link")
+                                handleDeepLink()
+
                             navController.navigate(R.id.homeFragment)
                         }
                     }
@@ -198,31 +258,6 @@ class MainActivity : AppCompatActivity() {
         chatViewModel.stopUnreadListeners()
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        handleNotificationIntentIfAny(intent)
-    }
-
-
-    private fun handleNotificationIntentIfAny(intent: Intent) {
-        val roomId = intent.getStringExtra("roomId") ?: return
-        intent.removeExtra("roomId")
-        Log.d("MyLog - MainActivity", roomId)
-        val currentUser = authViewModel.user.value ?: return
-        val otherId = UserUtils.getOtherId(roomId, currentUser.uid)
-        val otherUser = userViewModel.people.value
-            .firstOrNull { it.user.uid == otherId }?.user
-        val room = chatViewModel.rooms.value.filter { it.participants.sorted().joinToString("_") == roomId }.firstOrNull()
-        chatViewModel.setCurrentRoom(room)
-        chatViewModel.setCurrentChatUser(otherUser)
-        val args = Bundle().apply {
-            putString("chatConversationId", roomId)
-        }
-        if (::navController.isInitialized) {
-
-            navController.navigate(R.id.detailChatFragment, args)
-        }
-    }
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),

@@ -8,6 +8,7 @@ import com.example.chatapp.domain.data.Message
 import com.example.chatapp.domain.data.Room
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.domain.repository.ChatRepository
+import com.example.chatapp.domain.repository.UserRepository
 import com.example.chatapp.utils.UserUtils
 import com.google.firebase.firestore.DocumentSnapshot
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +22,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _loading = MutableStateFlow(false)
