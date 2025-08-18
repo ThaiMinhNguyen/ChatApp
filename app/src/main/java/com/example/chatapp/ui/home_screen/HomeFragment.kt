@@ -70,6 +70,7 @@ class HomeFragment : Fragment() {
         val user = authenticationViewModel.user.value
         chatViewModel.listenToRoomFlow(user!!)
         chatViewModel.listenUnreadByRoom(user.uid)
+        chatViewModel.listenTopRooms(user.uid)
     }
 
     private fun setUpObserver(){

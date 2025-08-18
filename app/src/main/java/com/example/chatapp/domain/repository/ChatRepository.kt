@@ -11,6 +11,7 @@ import com.example.chatapp.utils.UserUtils
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
@@ -301,6 +302,66 @@ class ChatRepository @Inject constructor(
             Result.success(sorted)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+
+    fun listenTopRoomsMessages(
+        userId: String,
+        limitRooms: Int = 10
+    ): Flow<Map<String, Pair<List<Message>, DocumentSnapshot?>>> = callbackFlow {
+        val registrations = mutableMapOf<String, ListenerRegistration>()
+        val allMessages = mutableMapOf<String, Pair<List<Message>, DocumentSnapshot?>>()
+
+        val roomsReg = firestore.collection("rooms")
+            .whereArrayContains("participants", userId)
+            .orderBy("lastMessageTime", Query.Direction.DESCENDING)
+            .limit(limitRooms.toLong())
+            .addSnapshotListener { roomsSnapshot, error ->
+                if (error != null) {
+                    Log.e("MyLog - ChatRepository", "Error listening top rooms: $error")
+                    return@addSnapshotListener
+                }
+
+                val currentTopRoomIds = roomsSnapshot?.documents?.map { it.id }?.toSet() ?: emptySet()
+
+                // Remove listeners for rooms that are no longer in top N
+                registrations.keys.toList().forEach { roomId ->
+                    if (roomId !in currentTopRoomIds) {
+                        registrations[roomId]?.remove()
+                        registrations.remove(roomId)
+                        allMessages.remove(roomId)
+                    }
+                }
+
+                currentTopRoomIds.forEach { roomId ->
+                    if (roomId !in registrations) {
+                        val messagesReg = firestore.collection("rooms")
+                            .document(roomId)
+                            .collection("messages")
+                            .orderBy("timestamp", Query.Direction.DESCENDING)
+                            .limit(20)
+                            .addSnapshotListener { messagesSnapshot, messagesError ->
+                                if (messagesError != null) {
+                                    Log.e("MyLog - ChatRepository", "Error listening to messages for top room $roomId: $messagesError")
+                                    return@addSnapshotListener
+                                }
+                                val desc = messagesSnapshot?.toObjects(Message::class.java).orEmpty()
+                                val latestAsc = desc.asReversed()
+                                val lastDoc = messagesSnapshot?.documents?.lastOrNull()
+                                allMessages[roomId] = latestAsc to lastDoc
+                                trySend(allMessages.toMap())
+                            }
+                        registrations[roomId] = messagesReg
+                    }
+                }
+
+                trySend(allMessages.toMap())
+            }
+
+        awaitClose {
+            registrations.values.forEach { it.remove() }
+            roomsReg.remove()
         }
     }
 

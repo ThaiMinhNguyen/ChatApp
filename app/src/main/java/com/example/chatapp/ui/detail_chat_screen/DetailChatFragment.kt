@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -23,16 +22,13 @@ import com.bumptech.glide.Glide
 import com.example.chatapp.R
 import com.example.chatapp.databinding.DetailChatScreenBinding
 import com.example.chatapp.domain.data.Message
-import com.example.chatapp.domain.data.MessageType
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.utils.UserUtils
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.ChatViewModel
 import com.example.chatapp.view_model.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlin.random.Random
 
 @AndroidEntryPoint
 class DetailChatFragment : Fragment() {
@@ -49,6 +45,7 @@ class DetailChatFragment : Fragment() {
     private var user: User? = null
 
     private var messageList = emptyList<Message>()
+    private var lastDisplayedLastMsgId: String? = null
 
     private val imgPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()){
         if (it != null) {
@@ -69,13 +66,12 @@ class DetailChatFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
         val args: DetailChatFragmentArgs by navArgs()
         conversationId = args.chatConversationId
         setUpView()
+        setUpRecyclerView()
         setUpRealtimeListener()
         setUpObserver()
-        setUpRecyclerView()
         setUpListener()
     }
 
@@ -123,7 +119,6 @@ class DetailChatFragment : Fragment() {
                     val currentUser = authViewModel.user.value
                     val otherUserId = UserUtils.getOtherId(conversationId, currentUser!!.uid)
                     chatViewModel.sendMessage(currentUser, otherUserId!!, content)
-//                    scrollToBottom()
                     hideKeyboard()
                 }
             }
@@ -144,19 +139,31 @@ class DetailChatFragment : Fragment() {
                     }
                 }
                 launch {
-                    chatViewModel.currentMessageList.collect{
-                        messageList = it
-                        messageAdapter.submitList(it)
-                        if(it.lastOrNull()?.senderId == authViewModel.user.value?.uid){
-                            scrollToBottom()
-                        }
-                        val currentUser = authViewModel.user.value
-                        chatViewModel.markMessageAsRead(conversationId, currentUser!!.uid)
+                    userViewModel.people.collect{
+                        getChatUser()
                     }
                 }
                 launch {
-                    userViewModel.people.collect{
-                        getChatUser()
+                    chatViewModel.messageListMap.collect{ map ->
+                        val newList = map[conversationId] ?: emptyList()
+                        val prevLastId = lastDisplayedLastMsgId
+                        val newLastId = newList.lastOrNull()?.uid
+                        val lastChanged = newLastId != prevLastId
+
+                        messageList = newList
+                        messageAdapter.submitList(newList)
+
+                        val lm = binding.rvChatMessages.layoutManager as LinearLayoutManager
+                        val isNearBottom = lm.findLastVisibleItemPosition() >= (messageAdapter.itemCount - 2)
+                        val lastSenderIsMe = newList.lastOrNull()?.senderId == authViewModel.user.value?.uid
+                        if (lastChanged && isNearBottom && lastSenderIsMe) {
+                            scrollToBottom()
+                        }
+
+                        lastDisplayedLastMsgId = newLastId
+
+                        val currentUser = authViewModel.user.value
+                        chatViewModel.markMessageAsRead(conversationId, currentUser!!.uid)
                     }
                 }
             }
@@ -208,11 +215,12 @@ class DetailChatFragment : Fragment() {
                     super.onScrolled(recyclerView, dx, dy)
                     val firstPos = lm.findFirstVisibleItemPosition()
                     if(firstPos <= 0){
-                        chatViewModel.loadMore()
+                        chatViewModel.loadMoreForRoom(conversationId)
                     }
                 }
             }
         )
+        messageAdapter.submitList(chatViewModel.messageListMap.value[conversationId])
     }
 
     private fun scrollToBottom(){

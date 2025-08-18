@@ -256,6 +256,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         userViewModel.stopAllListeners()
         chatViewModel.stopUnreadListeners()
+        chatViewModel.stopListenTopRooms()
     }
 
 

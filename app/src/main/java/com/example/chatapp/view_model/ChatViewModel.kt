@@ -22,8 +22,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val chatRepository: ChatRepository,
-    private val userRepository: UserRepository
+    private val chatRepository: ChatRepository
 ) : ViewModel() {
 
     private val _loading = MutableStateFlow(false)
@@ -35,11 +34,14 @@ class ChatViewModel @Inject constructor(
     private val _currentChatUser = MutableStateFlow<User?>(null)
     val currentChatUser get() = _currentChatUser
 
-    private val _currentMessageList = MutableStateFlow<List<Message>>(emptyList())
-    val currentMessageList get() = _currentMessageList
-
     private val _rooms = MutableStateFlow<List<Room>>(emptyList())
     val rooms get() = _rooms
+
+    private val _messageListMap = MutableStateFlow<MutableMap<String, List<Message>>>(mutableMapOf())
+    val messageListMap get() = _messageListMap
+
+    private val _lastDocByRoom = MutableStateFlow<Map<String, DocumentSnapshot?>>(emptyMap())
+    val lastDocByRoom get() = _lastDocByRoom
 
     private val _unreadTotal = MutableStateFlow(0)
     val unreadTotal get() = _unreadTotal
@@ -53,7 +55,6 @@ class ChatViewModel @Inject constructor(
     private val _searchResults = MutableStateFlow<List<ChatListItem.SearchResultItem>>(emptyList())
     val searchResults get() = _searchResults
 
-    private var oldestDoc: DocumentSnapshot? = null
     private var isLoadingMore = false
     private var hasMorePage = true
 
@@ -67,6 +68,8 @@ class ChatViewModel @Inject constructor(
     private var roomJob: Job? = null
 
     private var roomMessageJob: Job? = null
+
+    private var topRoomsJob: Job? = null
 
     private var unreadTotalJob: Job? = null
     private var unreadByRoomJob: Job? = null
@@ -122,29 +125,59 @@ class ChatViewModel @Inject constructor(
         roomMessageJob = viewModelScope.launch {
             chatRepository.listenRoomMessages(roomId, 20).collect{ (messages, lastDoc) ->
                 val latestAsc = messages.asReversed()
-                val old =_currentMessageList.value
+                val old = _messageListMap.value[roomId]?: emptyList()
                 val merged = (old + latestAsc).distinctBy { it.uid }
-                _currentMessageList.value = merged
-                oldestDoc = lastDoc
+                _messageListMap.value = _messageListMap.value.toMutableMap().apply {
+                    this[roomId] = merged
+                }
+                _lastDocByRoom.value = _lastDocByRoom.value.toMutableMap().apply {
+                    this[roomId] = lastDoc
+                }
             }
         }
     }
 
-    fun loadMore() {
-        val roomId = _currentRoom.value?.participants?.sorted()?.joinToString("_") ?: return
-        if (isLoadingMore || !hasMorePage || oldestDoc == null) return
 
+    fun listenTopRooms(userId: String, topN: Int = 10) {
+        topRoomsJob?.cancel()
+        topRoomsJob = viewModelScope.launch {
+            chatRepository.listenTopRoomsMessages(userId, topN).collect { map ->
+                val messagesMap = map.mapValues { it.value.first }
+                val lastDocMap = map.mapValues { it.value.second }
+                _messageListMap.value = _messageListMap.value.toMutableMap().apply {
+                    putAll(messagesMap)
+                }
+                _lastDocByRoom.value = _lastDocByRoom.value.toMutableMap().apply {
+                    putAll(lastDocMap)
+                }
+            }
+        }
+    }
+
+    fun stopListenTopRooms() {
+        topRoomsJob?.cancel()
+        topRoomsJob = null
+    }
+
+
+    fun loadMoreForRoom(roomId: String, pageSize: Int = 20) {
+        val curLast = _lastDocByRoom.value[roomId] ?: return
+        if (isLoadingMore || !hasMorePage) return
         viewModelScope.launch {
             isLoadingMore = true
             try {
-                chatRepository.loadMore(roomId, 20, oldestDoc)
-                    .onSuccess { (olderAsc, lastDoc) ->
+                chatRepository.loadMore(roomId, pageSize, curLast)
+                    .onSuccess { (olderAsc, newLastDoc) ->
                         if (olderAsc.isEmpty()) {
                             hasMorePage  = false
                         } else {
-                            val cur = _currentMessageList.value
-                            _currentMessageList.value = (olderAsc + cur).distinctBy { it.uid }
-                            oldestDoc = lastDoc
+                            val cur = _messageListMap.value[roomId]?: emptyList()
+                            _messageListMap.value = _messageListMap.value.toMutableMap().apply {
+                                this[roomId] = (olderAsc + cur).distinctBy { it.uid }
+                            }
+                            _lastDocByRoom.value = _lastDocByRoom.value.toMutableMap().apply {
+                                this[roomId] = newLastDoc
+                            }
                         }
                     }
                     .onFailure { e ->
