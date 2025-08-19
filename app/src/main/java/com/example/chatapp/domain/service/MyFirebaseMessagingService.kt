@@ -73,7 +73,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val replyPendingIntent = PendingIntent.getBroadcast(
             this,
-            0,
+            notificationId,
             replyIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
