@@ -119,8 +119,6 @@ class ChatViewModel @Inject constructor(
                 content = content,
                 messageStatus = MessageStatus.SENDING
             )
-//            val currentList = _messageListMap.value[roomId]?: emptyList()
-//            _messageListMap.value[roomId] = currentList + listOf(message)
             Log.d("MyLog - ChatViewModel", _messageListMap.value[roomId]?.lastOrNull().toString())
             chatRepository.sendMessage(chosenUserId, message)
         }

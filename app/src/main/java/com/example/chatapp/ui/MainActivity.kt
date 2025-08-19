@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -34,7 +33,6 @@ import com.example.chatapp.view_model.ChatViewModel
 import com.example.chatapp.view_model.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 
@@ -114,9 +112,12 @@ class MainActivity : AppCompatActivity() {
                 }
             } else if (uri?.scheme == "chatapp" && uri.host == "friends") {
                 Log.d("MyLog - MainActivity", "Manual navigation to friends")
-                navController.navigate(R.id.friendFragment)
+                binding.root.post {
+                    navController.navigate(R.id.friendFragment)
+                }
                 hasDeepLink = false
             }
+
         } else {
             Log.d("MyLog - MainActivity", "NavController not initialized")
         }
@@ -240,10 +241,10 @@ class MainActivity : AppCompatActivity() {
                         chatViewModel.listenUnreadTotal(user.uid)
                         chatViewModel.listenUnreadByRoom(user.uid)
                         if (navController.currentDestination?.id == R.id.signInFragment || navController.currentDestination?.id == R.id.signUpFragment) {
-
+                            if(hasDeepLink) {
                                 Log.d("MyLog - MainActivity", "Trigger user observe: Handle link")
                                 handleDeepLink()
-
+                            }
                             navController.navigate(R.id.homeFragment)
                         }
                     }

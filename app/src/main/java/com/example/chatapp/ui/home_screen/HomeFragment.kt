@@ -131,6 +131,8 @@ class HomeFragment : Fragment() {
                         }
                         if(completeSearchResult.isEmpty()){
                             onNoResultsFound()
+                        } else {
+                            binding.llNoSearchResult.visibility = View.GONE
                         }
                         chatListAdapter.submitList(completeSearchResult)
                     }

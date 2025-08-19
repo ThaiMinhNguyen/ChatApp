@@ -77,5 +77,6 @@
     <string name="notification_permission_rationale">This app need permission to send notification</string>
     <string name="open_settings">Open setting</string>
     <string name="sending">Sending...</string>
+    <string name="reply">Reply</string>
 
 </resources>

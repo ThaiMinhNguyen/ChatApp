@@ -1,9 +1,6 @@
 package com.example.chatapp.di
 
 import android.content.Context
-import androidx.room.Room
-//import com.example.chatapp.domain.data.local.AppDatabase
-import com.example.chatapp.domain.data.local.LocalMessageDao
 import com.example.chatapp.domain.repository.AuthRepository
 import com.example.chatapp.domain.repository.UserRepository
 import com.example.chatapp.utils.Prefs
@@ -50,14 +47,5 @@ object AppModule {
     @Provides
     @Singleton
     fun providePrefs(@ApplicationContext context: Context): Prefs = Prefs(context)
-
-//    @Provides
-//    @Singleton
-//    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
-//        Room.databaseBuilder(context, AppDatabase::class.java, "chatapp.db").build()
-//
-//    @Provides
-//    @Singleton
-//    fun provideLocalMessageDao(db: AppDatabase): LocalMessageDao = db.localMessageDao()
 
 }

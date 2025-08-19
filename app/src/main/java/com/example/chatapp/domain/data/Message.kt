@@ -1,11 +1,10 @@
 package com.example.chatapp.domain.data
 
-import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.firestore.ServerTimestamp
 import java.util.Date
 
-@Entity(tableName = "local_messages")
+
 data class Message(
     val uid: String = "",
     @PrimaryKey val localId: String = "",

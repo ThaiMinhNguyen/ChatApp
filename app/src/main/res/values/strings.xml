@@ -76,4 +76,5 @@
     <string name="notification_permission_settings_hint">Bạn đã tắt quyền thông báo. Mở cài đặt để bật lại?</string>
     <string name="open_settings">Mở cài đặt</string>
     <string name="sending">Đang gửi...</string>
+    <string name="reply">Trả lời</string>
 </resources>

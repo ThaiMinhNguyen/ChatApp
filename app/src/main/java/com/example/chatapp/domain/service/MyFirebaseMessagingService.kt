@@ -17,8 +17,13 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.core.app.RemoteInput
 import com.example.chatapp.ui.MainActivity
 import androidx.core.net.toUri
+import com.example.chatapp.domain.service.NotificationReceiver.Companion.EXTRA_RECIPIENT_ID
+import com.example.chatapp.domain.service.NotificationReceiver.Companion.EXTRA_ROOM_ID
+import com.example.chatapp.domain.service.NotificationReceiver.Companion.EXTRA_NOTIFICATION_ID
+import com.example.chatapp.domain.service.NotificationReceiver.Companion.KEY_TEXT_REPLY
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -29,6 +34,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val type = message.data["type"] ?: "chat"
         val title = message.data["title"] ?: "Tin nhắn mới"
         val body = message.data["body"] ?: "Bạn có tin nhắn mới"
+        val roomId = message.data["chatConversationId"]
+        val senderId = message.data["senderId"]
         val clickAction = message.data["click_action"]
         
         Log.d("MyLog - MessageService", "Type: $type")
@@ -52,16 +59,44 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             )
         }
 
+        val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
+            .setLabel(this.getString(R.string.message_hint))
+            .build()
+
+        val notificationId = (roomId ?: System.currentTimeMillis().toString()).hashCode()
+
+        val replyIntent = Intent(this, NotificationReceiver::class.java).apply {
+            putExtra(EXTRA_ROOM_ID, roomId)
+            putExtra(EXTRA_RECIPIENT_ID, senderId)
+            putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+        }
+
+        val replyPendingIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            replyIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        )
+
+        val replyAction = NotificationCompat.Action.Builder(
+            R.drawable.ic_mail_sign_in,
+            this.getString(R.string.reply),
+            replyPendingIntent)
+            .addRemoteInput(remoteInput)
+            .build()
+
+
         val notify = NotificationCompat.Builder(this, "chat_messages")
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
+            .addAction(replyAction)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
-        NotificationManagerCompat.from(this).notify(System.currentTimeMillis().toInt(), notify)
+        NotificationManagerCompat.from(this).notify(notificationId, notify)
     }
 
     override fun onNewToken(token: String) {
