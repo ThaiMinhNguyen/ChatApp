@@ -3,6 +3,7 @@ package com.example.chatapp.domain.repository
 import android.util.Log
 import com.example.chatapp.domain.data.ChatListItem
 import com.example.chatapp.domain.data.Message
+import com.example.chatapp.domain.data.MessageStatus
 import com.example.chatapp.domain.data.Room
 import com.example.chatapp.domain.data.RoomType
 import com.example.chatapp.domain.data.User
@@ -135,29 +136,23 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    suspend fun sendMessage(currentUser: User, chosenUserId: String, content: String) : Result<Unit>{
-        if(content.isBlank()) return Result.success(Unit)
+    suspend fun sendMessage(chosenUserId: String, message: Message) : Result<Unit>{
+        if(message.content.isBlank()) return Result.success(Unit)
         return try {
-            val roomId = UserUtils.generateId(currentUser.uid, chosenUserId)
             val docRefs = firestore
                 .collection("rooms")
-                .document(roomId)
+                .document(message.roomId)
                 .collection("messages").document()
-            val message = Message(
+
+            val serverMessage = message.copy(
                 uid = docRefs.id,
-                roomId = roomId,
-                senderId = currentUser.uid,
-                senderName = currentUser.displayName ?: "Unknown",
-                senderAvatar = currentUser.photoUrl ?: "",
-                content = content,
-                isRead = false
             )
 
-            val roomRef =firestore.collection("rooms")
-                .document(roomId)
+            val roomRef = firestore.collection("rooms")
+                .document(message.roomId)
 
             val batch = firestore.batch()
-            batch.set(docRefs, message)
+            batch.set(docRefs, serverMessage)
             batch.update(roomRef,
                 mapOf(
                     "lastMessage" to message.content,
@@ -166,7 +161,11 @@ class ChatRepository @Inject constructor(
                     "unreadCounts.${chosenUserId}" to FieldValue.increment(1)
                 )
             )
-            batch.commit().await()
+            batch.commit()
+                .addOnSuccessListener {
+                    docRefs.update("messageStatus", MessageStatus.SENT.name)
+                }
+                .await()
             Result.success(Unit)
         } catch (e: Exception){
             Log.e("MyLog - ChatRepo", e.toString())
@@ -231,7 +230,7 @@ class ChatRepository @Inject constructor(
             docsToUpdate.chunked(400).forEach { batchDocs ->
                 val batch = firestore.batch()
                 batchDocs.forEach { docSnapshot ->
-                    batch.update(docSnapshot.reference, mapOf("isRead" to true))
+                    batch.update(docSnapshot.reference, mapOf("read" to true))
                 }
                 batch.commit().await()
             }
@@ -305,7 +304,6 @@ class ChatRepository @Inject constructor(
         }
     }
 
-
     fun listenTopRoomsMessages(
         userId: String,
         limitRooms: Int = 10
@@ -325,7 +323,6 @@ class ChatRepository @Inject constructor(
 
                 val currentTopRoomIds = roomsSnapshot?.documents?.map { it.id }?.toSet() ?: emptySet()
 
-                // Remove listeners for rooms that are no longer in top N
                 registrations.keys.toList().forEach { roomId ->
                     if (roomId !in currentTopRoomIds) {
                         registrations[roomId]?.remove()

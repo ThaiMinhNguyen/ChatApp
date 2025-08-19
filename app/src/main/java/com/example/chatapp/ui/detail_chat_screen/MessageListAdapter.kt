@@ -10,6 +10,7 @@ import com.bumptech.glide.Glide
 import com.example.chatapp.R
 import com.example.chatapp.databinding.ItemChatMessageBinding
 import com.example.chatapp.domain.data.Message
+import com.example.chatapp.domain.data.MessageStatus
 import com.example.chatapp.utils.DateUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -28,6 +29,13 @@ class MessageListAdapter(
                     tvDateSeparator.text = dateText
                 } else {
                     tvDateSeparator.visibility = View.GONE
+                }
+
+                if(message.messageStatus == MessageStatus.SENDING){
+                    tvSentStatus.visibility = View.VISIBLE
+                    tvSentStatus.text = itemView.context.getString(R.string.sending)
+                } else {
+                    tvSentStatus.visibility = View.GONE
                 }
 
                 // Xác định là tin gửi hay nhận

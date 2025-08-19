@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chatapp.domain.data.ChatListItem
 import com.example.chatapp.domain.data.Message
+import com.example.chatapp.domain.data.MessageStatus
 import com.example.chatapp.domain.data.Room
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.domain.repository.ChatRepository
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import retrofit2.http.Query
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -107,7 +109,20 @@ class ChatViewModel @Inject constructor(
 
     fun sendMessage(currentUser: User, chosenUserId: String, content: String){
         viewModelScope.launch {
-            chatRepository.sendMessage(currentUser, chosenUserId, content)
+            val roomId = UserUtils.generateId(currentUser.uid, chosenUserId)
+            val message = Message(
+                roomId = roomId,
+                localId = UUID.randomUUID().toString(),
+                senderId = currentUser.uid,
+                senderName = currentUser.displayName?: "Unknown",
+                senderAvatar = currentUser.photoUrl ?: "",
+                content = content,
+                messageStatus = MessageStatus.SENDING
+            )
+//            val currentList = _messageListMap.value[roomId]?: emptyList()
+//            _messageListMap.value[roomId] = currentList + listOf(message)
+            Log.d("MyLog - ChatViewModel", _messageListMap.value[roomId]?.lastOrNull().toString())
+            chatRepository.sendMessage(chosenUserId, message)
         }
     }
 
@@ -126,7 +141,7 @@ class ChatViewModel @Inject constructor(
             chatRepository.listenRoomMessages(roomId, 20).collect{ (messages, lastDoc) ->
                 val latestAsc = messages.asReversed()
                 val old = _messageListMap.value[roomId]?: emptyList()
-                val merged = (old + latestAsc).distinctBy { it.uid }
+                val merged = mergeMessages(old, latestAsc)
                 _messageListMap.value = _messageListMap.value.toMutableMap().apply {
                     this[roomId] = merged
                 }
@@ -153,6 +168,27 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
+
+    private fun mergeMessages(old: List<Message>, incoming: List<Message>): List<Message> {
+        val byLocalId = old.associateBy { it.localId }.toMutableMap()
+
+        incoming.forEach { newMsg ->
+            val existing = byLocalId[newMsg.localId]
+
+            if (existing != null) {
+                byLocalId[newMsg.localId] = existing.copy(
+                    uid = newMsg.uid.ifBlank { existing.uid },
+                    timestamp = newMsg.timestamp ?: existing.timestamp,
+                    messageStatus = if (newMsg.uid.isNotBlank()) MessageStatus.SENT else existing.messageStatus
+                )
+            } else {
+                byLocalId[newMsg.localId] = newMsg
+            }
+        }
+
+        return byLocalId.values.sortedBy { it.timestamp?.time ?: Long.MAX_VALUE }
+    }
+
 
     fun stopListenTopRooms() {
         topRoomsJob?.cancel()

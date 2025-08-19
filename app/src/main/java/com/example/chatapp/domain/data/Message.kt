@@ -1,12 +1,14 @@
 package com.example.chatapp.domain.data
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.firebase.firestore.ServerTimestamp
 import java.util.Date
-import java.util.UUID
 
+@Entity(tableName = "local_messages")
 data class Message(
     val uid: String = "",
-    val localId: String = UUID.randomUUID().toString(),
+    @PrimaryKey val localId: String = "",
     val roomId: String = "",
     val senderId: String = "",
     val senderName: String = "",
@@ -15,13 +17,14 @@ data class Message(
     val messageType: MessageType = MessageType.TEXT,
     @ServerTimestamp val timestamp: Date? = null,
     val messageStatus: MessageStatus = MessageStatus.SENDING,
-    val isRead: Boolean = false
+    val read: Boolean = false
 )
 
 enum class MessageStatus {
     SENDING,
     SENT,
-    SEND_FAILED
+    DELIVERED,
+    SEEN
 }
 
 enum class MessageType {

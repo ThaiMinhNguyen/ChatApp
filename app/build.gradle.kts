@@ -85,4 +85,9 @@ dependencies {
     implementation(libs.circleimageview)
 
     implementation(libs.imagepicker)
+
+    // Room (local database)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 }
