@@ -5,14 +5,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.domain.repository.AuthRepository
+import com.example.chatapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class AuthenticationViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _email = MutableStateFlow("")
@@ -32,6 +35,8 @@ class AuthenticationViewModel @Inject constructor(
 
     private val _loading = MutableStateFlow(false)
     val loading get() = _loading
+
+    private var userJob : Job? = null
 
     fun onEmailChange(email: String){
         _email.value = email
@@ -133,6 +138,21 @@ class AuthenticationViewModel @Inject constructor(
                 _loading.value = false
             }
         }
+    }
+
+    fun listenToUserProfile(uid: String) {
+        userJob?.cancel()
+        userJob = viewModelScope.launch {
+            userRepository.listenToUserById(uid).collect { user ->
+                Log.d("MyLog - AuthViewModel", "User profile updated: ${user.displayName}")
+                _user.value = user
+            }
+        }
+    }
+
+    fun stopListeningToUserProfile() {
+        userJob?.cancel()
+        userJob = null
     }
 
 }

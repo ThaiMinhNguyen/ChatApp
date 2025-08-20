@@ -22,13 +22,17 @@ import com.bumptech.glide.Glide
 import com.example.chatapp.R
 import com.example.chatapp.databinding.DetailChatScreenBinding
 import com.example.chatapp.domain.data.Message
+import com.example.chatapp.domain.data.MessageStatus
+import com.example.chatapp.domain.data.MessageType
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.utils.UserUtils
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.ChatViewModel
+import com.example.chatapp.view_model.StorageViewModel
 import com.example.chatapp.view_model.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 @AndroidEntryPoint
 class DetailChatFragment : Fragment() {
@@ -38,6 +42,7 @@ class DetailChatFragment : Fragment() {
     private val chatViewModel: ChatViewModel by activityViewModels()
     private val userViewModel: UserViewModel by activityViewModels()
     private val authViewModel: AuthenticationViewModel by activityViewModels()
+    private val storageViewModel: StorageViewModel by activityViewModels()
 
     private lateinit var messageAdapter: MessageListAdapter
     private lateinit var conversationId: String
@@ -50,6 +55,9 @@ class DetailChatFragment : Fragment() {
     private val imgPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()){
         if (it != null) {
             Log.d("MyLog - PhotoPicker", "Selected URI: $it")
+            storageViewModel.uploadChatImage(
+                it, UUID.randomUUID().toString(), conversationId, requireContext()
+            )
         } else {
             Log.d("MyLog - PhotoPicker", "No media selected")
         }

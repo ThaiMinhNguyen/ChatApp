@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.chatapp.domain.data.ChatListItem
 import com.example.chatapp.domain.data.Message
 import com.example.chatapp.domain.data.MessageStatus
+import com.example.chatapp.domain.data.MessageType
 import com.example.chatapp.domain.data.Room
 import com.example.chatapp.domain.data.RoomType
 import com.example.chatapp.domain.data.User
@@ -153,9 +154,14 @@ class ChatRepository @Inject constructor(
 
             val batch = firestore.batch()
             batch.set(docRefs, serverMessage)
+            val lastMessageValue = if (message.messageType == MessageType.IMAGE) {
+                "Image"
+            } else {
+                message.content
+            }
             batch.update(roomRef,
                 mapOf(
-                    "lastMessage" to message.content,
+                    "lastMessage" to lastMessageValue,
                     "lastMessageSenderId" to message.senderId,
                     "lastMessageTime" to FieldValue.serverTimestamp(),
                     "unreadCounts.${chosenUserId}" to FieldValue.increment(1)

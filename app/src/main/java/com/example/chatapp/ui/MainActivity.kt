@@ -30,6 +30,7 @@ import com.example.chatapp.ui.home_screen.HomeFragmentDirections
 import com.example.chatapp.utils.Prefs
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.ChatViewModel
+import com.example.chatapp.view_model.StorageViewModel
 import com.example.chatapp.view_model.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -44,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     private val authViewModel: AuthenticationViewModel by viewModels()
     private val userViewModel: UserViewModel by viewModels()
     private val chatViewModel: ChatViewModel by viewModels()
+    private val storageViewModel: StorageViewModel by viewModels()
 
     @Inject lateinit var prefs: Prefs
 
@@ -145,6 +147,15 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 launch {
+                    storageViewModel.loading.collect {
+                        if (it) {
+                            binding.llProgressBar.visibility = View.VISIBLE
+                        } else {
+                            binding.llProgressBar.visibility = View.GONE
+                        }
+                    }
+                }
+                launch {
                     userViewModel.people.collect{ people ->
                         val friendRequestCount = people.count { !it.isFriend && it.isRequestReceived }
                         updateFriendBadgeCount(friendRequestCount)
@@ -233,6 +244,7 @@ class MainActivity : AppCompatActivity() {
                 authViewModel.user.collect{ user ->
                     Log.d("MyLog - MainActivity", "observeAuthState: user=${user?.displayName}, hasDeepLink=$hasDeepLink")
                     if (user == null) {
+                        authViewModel.stopListeningToUserProfile()
                         navController.navigate(R.id.signInFragment)
                     } else {
                         prefs.setRememberLogin(true)
@@ -245,6 +257,7 @@ class MainActivity : AppCompatActivity() {
                                 Log.d("MyLog - MainActivity", "Trigger user observe: Handle link")
                                 handleDeepLink()
                             }
+                            authViewModel.listenToUserProfile(user.uid)
                             navController.navigate(R.id.homeFragment)
                         }
                     }
@@ -258,6 +271,7 @@ class MainActivity : AppCompatActivity() {
         userViewModel.stopAllListeners()
         chatViewModel.stopUnreadListeners()
         chatViewModel.stopListenTopRooms()
+        authViewModel.stopListeningToUserProfile()
     }
 
 

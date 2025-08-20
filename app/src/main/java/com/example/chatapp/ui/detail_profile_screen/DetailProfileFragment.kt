@@ -16,6 +16,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.chatapp.databinding.DetailProfileScreenBinding
 import com.example.chatapp.utils.setImageUrl
 import com.example.chatapp.view_model.AuthenticationViewModel
+import com.example.chatapp.view_model.StorageViewModel
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.datepicker.MaterialDatePicker
 import kotlinx.coroutines.launch
@@ -30,6 +31,7 @@ class DetailProfileFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val authViewModel : AuthenticationViewModel by activityViewModels()
+    private val storageViewModel: StorageViewModel by activityViewModels()
 
     private val imagePickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -37,7 +39,13 @@ class DetailProfileFragment : Fragment() {
         if (result.resultCode == Activity.RESULT_OK) {
             val uri = result.data?.data
 
-            binding.ivAvatar.setImageURI(uri)
+            if(uri != null){
+                binding.ivAvatar.setImageURI(uri)
+                storageViewModel.uploadAvatar(uri, authViewModel.user.value?.uid, requireContext())
+            } else {
+                Toast.makeText(requireContext(), "Failed to get image", Toast.LENGTH_SHORT).show()
+            }
+
 
         } else if (result.resultCode == ImagePicker.RESULT_ERROR) {
             Toast.makeText(requireContext(), ImagePicker.getError(result.data), Toast.LENGTH_SHORT).show()

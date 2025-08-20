@@ -124,6 +124,15 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun sendImageMessage(
+        choosenUserId: String,
+        message: Message
+    ){
+        viewModelScope.launch {
+            chatRepository.sendMessage(choosenUserId, message)
+        }
+    }
+
     fun listenToRoomFlow(currentUser: User){
         roomJob?.cancel()
         roomJob = viewModelScope.launch {

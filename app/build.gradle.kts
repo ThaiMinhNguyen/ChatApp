@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +8,7 @@ plugins {
     id("androidx.navigation.safeargs.kotlin")
     id("com.google.gms.google-services")
     id("kotlin-parcelize")
+    kotlin("plugin.serialization") version "1.8.21"
 }
 
 android {
@@ -27,6 +30,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val properties = Properties()
+    val file = File(rootDir, "local.properties")
+    if (file.exists() && file.isFile) {
+        file.inputStream().use {
+            properties.load(it)
+        }
+    }
+
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -34,6 +46,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", properties.getProperty("SUPABASE_PUBLISHABLE_KEY"))
+            buildConfigField("String", "SUPABASE_URL", properties.getProperty("SUPABASE_URL"))
+
+        }
+        debug {
+            buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", properties.getProperty("SUPABASE_PUBLISHABLE_KEY"))
+            buildConfigField("String", "SUPABASE_URL", properties.getProperty("SUPABASE_URL"))
         }
     }
     compileOptions {
@@ -91,4 +110,11 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.2.2"))
+    implementation("io.github.jan-tennert.supabase:storage-kt")
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.github.jan-tennert.supabase:realtime-kt")
+    implementation(libs.ktor.client.android)
 }

@@ -14,3 +14,15 @@ fun ImageView.setImageUrl(url: String?) {
         .diskCacheStrategy(DiskCacheStrategy.ALL)
         .into(this)
 }
+
+
+fun ImageView.setImageChatUrl(url: String?) {
+    Glide.with(this.context)
+        .load(url)
+        .placeholder(R.drawable.ic_user_register)
+        .error(R.drawable.ic_user_register)
+        .override(350, 350)
+        .fitCenter()
+        .diskCacheStrategy(DiskCacheStrategy.ALL)
+        .into(this)
+}

@@ -11,7 +11,10 @@ import com.example.chatapp.R
 import com.example.chatapp.databinding.ItemChatMessageBinding
 import com.example.chatapp.domain.data.Message
 import com.example.chatapp.domain.data.MessageStatus
+import com.example.chatapp.domain.data.MessageType
 import com.example.chatapp.utils.DateUtils
+import com.example.chatapp.utils.setImageChatUrl
+import com.example.chatapp.utils.setImageUrl
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -45,6 +48,14 @@ class MessageListAdapter(
                 llReceivedMessage.visibility = if (!isSent) View.VISIBLE else View.GONE
 
                 if (isSent) {
+                    if(message.messageType == MessageType.IMAGE) {
+                        ivSentImage.visibility = View.VISIBLE
+                        ivSentImage.setImageChatUrl(message.content)
+                        tvSentMessage.visibility = View.GONE
+                    } else {
+                        ivSentImage.visibility = View.GONE
+                        tvSentMessage.visibility = View.VISIBLE
+                    }
                     tvSentMessage.text = message.content
                     if (showTime && message.timestamp != null) {
                         tvSentTime.text = formatTime(message.timestamp)
@@ -53,6 +64,14 @@ class MessageListAdapter(
                         tvSentTime.visibility = View.GONE
                     }
                 } else {
+                    if(message.messageType == MessageType.IMAGE) {
+                        ivReceivedImage.visibility = View.VISIBLE
+                        ivReceivedImage.setImageChatUrl(message.content)
+                        tvReceivedMessage.visibility = View.GONE
+                    } else {
+                        ivReceivedImage.visibility = View.GONE
+                        tvReceivedMessage.visibility = View.VISIBLE
+                    }
                     tvReceivedMessage.text = message.content
                     if (showTime && message.timestamp != null) {
                         tvReceivedTime.text = formatTime(message.timestamp)

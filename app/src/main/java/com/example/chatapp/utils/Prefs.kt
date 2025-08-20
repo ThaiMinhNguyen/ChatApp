@@ -29,6 +29,10 @@ class Prefs @Inject constructor(
         sharedPrefs.edit { putString(KEY_LAST_UID, uid) }
     }
 
+    fun getLastUid(): String? {
+        return sharedPrefs.getString(KEY_LAST_UID, null)
+    }
+
 
     fun clear() {
         sharedPrefs.edit { clear() }

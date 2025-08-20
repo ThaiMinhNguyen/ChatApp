@@ -1,5 +1,6 @@
 package com.example.chatapp.domain.repository
 
+import android.net.Uri
 import android.util.Log
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.utils.Prefs
@@ -14,6 +15,7 @@ import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessaging
 import javax.inject.Inject
 import kotlinx.coroutines.tasks.await
+import androidx.core.net.toUri
 
 class AuthRepository @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
@@ -33,6 +35,8 @@ class AuthRepository @Inject constructor(
                 val ref = FirebaseFirestore.getInstance().collection("users").document(uid)
                 ref.set(mapOf("fcmTokens" to FieldValue.arrayUnion(token)), SetOptions.merge())
             }
+            prefs.saveLastUid(user.uid)
+            prefs.setRememberLogin(true)
             Result.success(user)
         } catch (e: Exception) {
             Result.failure(e)
@@ -66,6 +70,8 @@ class AuthRepository @Inject constructor(
                 isEmailVerified = result.user!!.isEmailVerified
             )
             val savedUser = userRepository.createUser(user).getOrThrow()
+            prefs.saveLastUid(savedUser.uid)
+            prefs.setRememberLogin(true)
             Result.success(savedUser)
         } catch (e: Exception) {
             Result.failure(e)
@@ -95,7 +101,6 @@ class AuthRepository @Inject constructor(
         return try {
             val profileUpdates = userProfileChangeRequest {
                 displayName = updateCurrentUser.displayName
-                //TODO: Implement photo later
             }
             val user = firebaseAuth.currentUser?: return Result.failure(IllegalStateException("No signed-in user"))
             userRepository.updateUserProfile(updateCurrentUser).getOrThrow()
@@ -105,4 +110,25 @@ class AuthRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun updateFirebaseAuthAvatar(userId: String, url: String): Result<Unit> {
+        return try {
+            val profileUpdates = UserProfileChangeRequest.Builder()
+                .setPhotoUri(url.toUri())
+                .build()
+
+            val currentUser = FirebaseAuth.getInstance().currentUser
+                ?: return Result.failure(Exception("User not found"))
+
+            if (currentUser.uid != userId) {
+                return Result.failure(Exception("Cannot update avatar for different user"))
+            }
+
+            currentUser.updateProfile(profileUpdates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 }

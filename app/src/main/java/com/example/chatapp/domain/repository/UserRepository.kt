@@ -170,4 +170,35 @@ class UserRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun updateUserAvatar(userId: String, url: String) : Result<Unit> {
+        return try {
+            firestore.collection("users")
+                .document(userId)
+                .update("photoUrl", url)
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception){
+            Result.failure(e)
+        }
+    }
+
+    fun listenToUserById(userId: String): Flow<User> = callbackFlow {
+        val registration = firestore.collection("users")
+            .document(userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("MyLog - UserRepo", "Error listening to user: ${error.message}")
+                    return@addSnapshotListener
+                }
+                val user = snapshot?.toObject(User::class.java)
+                if (user != null) {
+                    trySend(user).isSuccess
+                } else {
+                    Log.w("MyLog - UserRepo", "User not found for ID: $userId")
+                }
+            }
+
+        awaitClose { registration.remove() }
+    }
 }

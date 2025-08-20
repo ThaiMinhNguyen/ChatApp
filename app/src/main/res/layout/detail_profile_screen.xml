@@ -193,6 +193,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         tools:text="Awesome Chat"
+                        android:inputType="textPersonName|textCapWords|textNoSuggestions"
                         android:textColor="@color/black"
                         android:textSize="18sp"
                         android:fontFamily="@font/lato_regular"
