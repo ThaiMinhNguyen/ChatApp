@@ -77,4 +77,5 @@
     <string name="open_settings">Mở cài đặt</string>
     <string name="sending">Đang gửi...</string>
     <string name="reply">Trả lời</string>
+    <string name="send">Gửi</string>
 </resources>

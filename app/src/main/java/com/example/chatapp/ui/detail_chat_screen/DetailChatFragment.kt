@@ -1,6 +1,7 @@
 package com.example.chatapp.ui.detail_chat_screen
 
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -9,6 +10,9 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.core.view.OnReceiveContentListener
+import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -21,11 +25,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.chatapp.R
 import com.example.chatapp.databinding.DetailChatScreenBinding
+import com.example.chatapp.databinding.ImagePreviewDialogBinding
 import com.example.chatapp.domain.data.Message
 import com.example.chatapp.domain.data.MessageStatus
 import com.example.chatapp.domain.data.MessageType
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.utils.UserUtils
+import com.example.chatapp.utils.setImageChatUrl
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.ChatViewModel
 import com.example.chatapp.view_model.StorageViewModel
@@ -55,21 +61,7 @@ class DetailChatFragment : Fragment() {
     private val imgPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()){
         if (it != null) {
             Log.d("MyLog - PhotoPicker", "Selected URI: $it")
-            val currentUser = authViewModel.user.value
-            val message = Message(
-                roomId = conversationId,
-                content = it.toString(),
-                senderId = currentUser?.uid ?: "",
-                senderName = currentUser?.displayName?: "Unknown",
-                senderAvatar = currentUser?.photoUrl.toString(),
-                messageType = MessageType.IMAGE,
-                messageStatus = MessageStatus.SENDING,
-                localId = UUID.randomUUID().toString(),
-            )
-            if(user != null) {
-                chatViewModel.sendImageMessage(user!!.uid, message, requireContext())
-            }
-
+            showPreviewDialog(it)
         } else {
             Log.d("MyLog - PhotoPicker", "No media selected")
         }
@@ -119,6 +111,20 @@ class DetailChatFragment : Fragment() {
     private fun setUpListener(){
         binding.apply {
 
+            //Send gif và sticker
+            ViewCompat.setOnReceiveContentListener(
+                etMessageInput,
+                arrayOf("image/*", "video/*")
+            ) { _, payload ->
+                val clipData = payload.clip
+                for (i in 0 until clipData.itemCount) {
+                    val uri = clipData.getItemAt(i).uri
+                    Log.d("MyLog - DetailChat", "Selected URI from content: $uri")
+                    showPreviewDialog(uri)
+                }
+                null
+            }
+
             btnAttachment.setOnClickListener {
                 imgPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
             }
@@ -137,6 +143,41 @@ class DetailChatFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun showPreviewDialog(uri: Uri){
+        val dialogBinding = ImagePreviewDialogBinding.inflate(layoutInflater)
+        dialogBinding.apply {
+            ivPreview.setImageChatUrl(uri.toString())
+            btnSend.isEnabled = true
+        }
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogBinding.root)
+            .setCancelable(true)
+            .create()
+        dialogBinding.apply {
+            btnSend.setOnClickListener {
+                val currentUser = authViewModel.user.value
+                val message = Message(
+                    roomId = conversationId,
+                    content = uri.toString(),
+                    senderId = currentUser?.uid ?: "",
+                    senderName = currentUser?.displayName?: "Unknown",
+                    senderAvatar = currentUser?.photoUrl.toString(),
+                    messageType = MessageType.IMAGE,
+                    messageStatus = MessageStatus.SENDING,
+                    localId = UUID.randomUUID().toString(),
+                )
+                if(user != null) {
+                    chatViewModel.sendImageMessage(user!!.uid, message, requireContext())
+                }
+                dialog.dismiss()
+            }
+            btnCancel.setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.show()
     }
 
     private fun setUpRealtimeListener(){
