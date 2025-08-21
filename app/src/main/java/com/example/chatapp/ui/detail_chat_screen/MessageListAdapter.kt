@@ -24,6 +24,24 @@ class MessageListAdapter(
     private val currentUserId: String
 ) : ListAdapter<Message, MessageListAdapter.MessageViewHolder>(MessageDiffCallback()) {
 
+    private lateinit var binding: ItemChatMessageBinding
+
+    private var avatarMap : Map<String, String?> = emptyMap()
+
+    fun setAvatarMap(avatarMap: Map<String, String?>) {
+        this.avatarMap = avatarMap
+        for (i in 0 until itemCount) {
+            val message = getItem(i)
+            val newAvatar = avatarMap[message.senderId]
+            val oldAvatar = message.senderAvatar
+            if (newAvatar != oldAvatar) {
+                notifyItemChanged(i)
+            }
+        }
+    }
+
+
+
     inner class MessageViewHolder(private val binding: ItemChatMessageBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(message: Message, showDateSeparator: Boolean, dateText: String?, showTime: Boolean) {
             with(binding) {
@@ -34,12 +52,6 @@ class MessageListAdapter(
                     tvDateSeparator.visibility = View.GONE
                 }
 
-                if(message.messageStatus == MessageStatus.SENDING){
-                    tvSentStatus.visibility = View.VISIBLE
-                    tvSentStatus.text = itemView.context.getString(R.string.sending)
-                } else {
-                    tvSentStatus.visibility = View.GONE
-                }
 
                 // Xác định là tin gửi hay nhận
                 val isSent = message.senderId == currentUserId
@@ -48,6 +60,7 @@ class MessageListAdapter(
                 llReceivedMessage.visibility = if (!isSent) View.VISIBLE else View.GONE
 
                 if (isSent) {
+
                     if(message.messageType == MessageType.IMAGE) {
                         ivSentImage.visibility = View.VISIBLE
                         ivSentImage.setImageChatUrl(message.content)
@@ -62,6 +75,12 @@ class MessageListAdapter(
                         tvSentTime.visibility = View.VISIBLE
                     } else {
                         tvSentTime.visibility = View.GONE
+                    }
+                    if(message.messageStatus == MessageStatus.SENDING){
+                        tvSentStatus.visibility = View.VISIBLE
+                        tvSentStatus.text = itemView.context.getString(R.string.sending)
+                    } else {
+                        tvSentStatus.visibility = View.GONE
                     }
                 } else {
                     if(message.messageType == MessageType.IMAGE) {
@@ -80,8 +99,11 @@ class MessageListAdapter(
                         tvReceivedTime.visibility = View.GONE
                     }
                     // Load avatar
+
+                    val userAvatar = avatarMap[message.senderId] ?: message.senderAvatar
+
                     Glide.with(civSenderAvatar)
-                        .load(message.senderAvatar)
+                        .load(userAvatar)
                         .placeholder(R.drawable.ic_user_mail)
                         .into(civSenderAvatar)
                 }
@@ -94,7 +116,7 @@ class MessageListAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
-        val binding = ItemChatMessageBinding.inflate(
+        binding = ItemChatMessageBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
         return MessageViewHolder(binding)

@@ -137,6 +137,57 @@ class ChatRepository @Inject constructor(
         }
     }
 
+    suspend fun updateMessageStatus(roomId: String, localId: String) : Result<Unit> {
+        return try {
+            val messageRef = firestore.collection("rooms")
+                .document(roomId)
+                .collection("messages")
+                .whereEqualTo("localId", localId)
+            val snapshot = messageRef.get().await()
+            if (!snapshot.isEmpty) {
+                snapshot.documents.forEach{ doc ->
+                    doc.reference.update(
+                        mapOf(
+                            "messageStatus" to MessageStatus.SENT.name
+                        )
+                    ).await()
+                }
+            } else {
+                return Result.failure(Exception("No message found with localId: $localId in room: $roomId"))
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("MyLog - ChatRepo", "Error updating message image URL: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateMessageImageUrl(roomId: String, localId: String, imageUrl: String): Result<Unit> {
+        return try {
+            val messageRef = firestore.collection("rooms")
+                .document(roomId)
+                .collection("messages")
+                .whereEqualTo("localId", localId)
+            val snapshot = messageRef.get().await()
+            if (!snapshot.isEmpty) {
+                snapshot.documents.forEach{ doc ->
+                    doc.reference.update(
+                        mapOf(
+                            "content" to imageUrl,
+                            "messageStatus" to MessageStatus.SENT.name
+                        )
+                    ).await()
+                }
+            } else {
+                return Result.failure(Exception("No message found with localId: $localId in room: $roomId"))
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("MyLog - ChatRepo", "Error updating message image URL: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
     suspend fun sendMessage(chosenUserId: String, message: Message) : Result<Unit>{
         if(message.content.isBlank()) return Result.success(Unit)
         return try {
@@ -167,11 +218,7 @@ class ChatRepository @Inject constructor(
                     "unreadCounts.${chosenUserId}" to FieldValue.increment(1)
                 )
             )
-            batch.commit()
-                .addOnSuccessListener {
-                    docRefs.update("messageStatus", MessageStatus.SENT.name)
-                }
-                .await()
+            batch.commit().await()
             Result.success(Unit)
         } catch (e: Exception){
             Log.e("MyLog - ChatRepo", e.toString())

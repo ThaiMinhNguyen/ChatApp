@@ -1,29 +1,31 @@
 package com.example.chatapp.domain.service
 
 import android.Manifest
+import android.app.PendingIntent
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
+import com.bumptech.glide.request.transition.Transition
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.RemoteInput
+import androidx.core.net.toUri
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
 import com.example.chatapp.R
+import com.example.chatapp.domain.service.NotificationReceiver.Companion.EXTRA_NOTIFICATION_ID
+import com.example.chatapp.domain.service.NotificationReceiver.Companion.EXTRA_RECIPIENT_ID
+import com.example.chatapp.domain.service.NotificationReceiver.Companion.EXTRA_ROOM_ID
+import com.example.chatapp.domain.service.NotificationReceiver.Companion.KEY_TEXT_REPLY
+import com.example.chatapp.ui.MainActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import androidx.core.os.bundleOf
-import androidx.navigation.NavDeepLinkBuilder
-import android.app.PendingIntent
-import android.content.Intent
-import android.net.Uri
-import android.util.Log
-import androidx.core.app.RemoteInput
-import com.example.chatapp.ui.MainActivity
-import androidx.core.net.toUri
-import com.example.chatapp.domain.service.NotificationReceiver.Companion.EXTRA_RECIPIENT_ID
-import com.example.chatapp.domain.service.NotificationReceiver.Companion.EXTRA_ROOM_ID
-import com.example.chatapp.domain.service.NotificationReceiver.Companion.EXTRA_NOTIFICATION_ID
-import com.example.chatapp.domain.service.NotificationReceiver.Companion.KEY_TEXT_REPLY
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -37,6 +39,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val roomId = message.data["chatConversationId"]
         val senderId = message.data["senderId"]
         val clickAction = message.data["click_action"]
+        val content = message.data["content"] ?: ""
+        val messageType = message.data["messageType"] ?: "TEXT"
         
         Log.d("MyLog - MessageService", "Type: $type")
         Log.d("MyLog - MessageService", "Click action: $clickAction")
@@ -94,9 +98,36 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setContentIntent(pendingIntent)
             .addAction(replyAction)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
 
-        NotificationManagerCompat.from(this).notify(notificationId, notify)
+
+        if(messageType == "IMAGE") {
+            Log.d("MyLog - MessageService", "Loading image content: $content")
+            val url = "https://iqeeolueqpuuyizbecey.supabase.co/storage/v1/object/public/chat_image/$content"
+            Glide.with(this.applicationContext)
+                .asBitmap()
+                .load(url)
+                .into(object : CustomTarget<Bitmap>() {
+                @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    notify.setLargeIcon(resource)
+                        .setStyle(
+                            NotificationCompat.BigPictureStyle().bigPicture(resource)
+                                .bigLargeIcon(resource)
+                        )
+                    NotificationManagerCompat.from(this@MyFirebaseMessagingService).notify(notificationId, notify.build())
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {}
+                override fun onLoadFailed(errorDrawable: Drawable?) {
+                    super.onLoadFailed(errorDrawable)
+                    Log.e("MyLog - MessageService", "Failed to load image: $errorDrawable")
+                }
+            })
+        } else {
+            notify.setStyle(NotificationCompat.BigTextStyle().bigText(content))
+            NotificationManagerCompat.from(this).notify(notificationId, notify.build())
+        }
+
     }
 
     override fun onNewToken(token: String) {

@@ -21,7 +21,7 @@ fun ImageView.setImageChatUrl(url: String?) {
         .load(url)
         .placeholder(R.drawable.ic_user_register)
         .error(R.drawable.ic_user_register)
-        .override(350, 350)
+        .override(500, 500)
         .fitCenter()
         .diskCacheStrategy(DiskCacheStrategy.ALL)
         .into(this)

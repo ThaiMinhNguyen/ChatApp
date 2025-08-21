@@ -1,6 +1,8 @@
 package com.example.chatapp.view_model
 
+import android.content.Context
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chatapp.domain.data.ChatListItem
@@ -9,7 +11,7 @@ import com.example.chatapp.domain.data.MessageStatus
 import com.example.chatapp.domain.data.Room
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.domain.repository.ChatRepository
-import com.example.chatapp.domain.repository.UserRepository
+import com.example.chatapp.domain.repository.StorageRepository
 import com.example.chatapp.utils.UserUtils
 import com.google.firebase.firestore.DocumentSnapshot
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,13 +20,13 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import retrofit2.http.Query
 import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val storageRepository: StorageRepository
 ) : ViewModel() {
 
     private val _loading = MutableStateFlow(false)
@@ -121,15 +123,31 @@ class ChatViewModel @Inject constructor(
             )
             Log.d("MyLog - ChatViewModel", _messageListMap.value[roomId]?.lastOrNull().toString())
             chatRepository.sendMessage(chosenUserId, message)
+                .onSuccess {
+                    chatRepository.updateMessageStatus(message.roomId, message.localId)
+                }
         }
     }
 
     fun sendImageMessage(
-        choosenUserId: String,
-        message: Message
+        chosenUserId: String,
+        message: Message,
+        context: Context
     ){
         viewModelScope.launch {
-            chatRepository.sendMessage(choosenUserId, message)
+            chatRepository.sendMessage(chosenUserId, message)
+                .onSuccess {
+                    storageRepository.uploadFileFromUri(
+                        "chat_image",
+                        message.content.toUri(),
+                        message.localId,
+                        context
+                    ).onSuccess { imageUrl ->
+                        chatRepository.updateMessageImageUrl(message.roomId, message.localId, imageUrl)
+                    }.onFailure { e ->
+                        _error.value = e.message
+                    }
+                }
         }
     }
 
@@ -186,7 +204,6 @@ class ChatViewModel @Inject constructor(
                 byLocalId[newMsg.localId] = existing.copy(
                     uid = newMsg.uid.ifBlank { existing.uid },
                     timestamp = newMsg.timestamp ?: existing.timestamp,
-                    messageStatus = if (newMsg.uid.isNotBlank()) MessageStatus.SENT else existing.messageStatus
                 )
             } else {
                 byLocalId[newMsg.localId] = newMsg

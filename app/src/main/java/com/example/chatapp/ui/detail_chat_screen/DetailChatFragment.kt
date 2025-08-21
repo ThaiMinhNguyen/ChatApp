@@ -55,9 +55,21 @@ class DetailChatFragment : Fragment() {
     private val imgPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()){
         if (it != null) {
             Log.d("MyLog - PhotoPicker", "Selected URI: $it")
-            storageViewModel.uploadChatImage(
-                it, UUID.randomUUID().toString(), conversationId, requireContext()
+            val currentUser = authViewModel.user.value
+            val message = Message(
+                roomId = conversationId,
+                content = it.toString(),
+                senderId = currentUser?.uid ?: "",
+                senderName = currentUser?.displayName?: "Unknown",
+                senderAvatar = currentUser?.photoUrl.toString(),
+                messageType = MessageType.IMAGE,
+                messageStatus = MessageStatus.SENDING,
+                localId = UUID.randomUUID().toString(),
             )
+            if(user != null) {
+                chatViewModel.sendImageMessage(user!!.uid, message, requireContext())
+            }
+
         } else {
             Log.d("MyLog - PhotoPicker", "No media selected")
         }
@@ -99,15 +111,9 @@ class DetailChatFragment : Fragment() {
 
     private fun getChatUser(){
         val currentUser = authViewModel.user.value
-        if(user == null){
-            val otherUserId = UserUtils.getOtherId(conversationId, currentUser!!.uid)
-            val otherUser = userViewModel.people.value.find { it.user.uid == otherUserId }?.user
-            if(otherUser == null){
-                Log.d("MyLog - DetailChat", "getChatUser : null")
-            }
-            chatViewModel.setCurrentChatUser(otherUser)
-            Log.d("MyLog - DetailChat", otherUser?.displayName?: "Unknown")
-        }
+        val otherUserId = UserUtils.getOtherId(conversationId, currentUser!!.uid)
+        val otherUser = userViewModel.people.value.find { it.user.uid == otherUserId }?.user
+        chatViewModel.setCurrentChatUser(otherUser)
     }
 
     private fun setUpListener(){
@@ -149,6 +155,8 @@ class DetailChatFragment : Fragment() {
                 launch {
                     userViewModel.people.collect{
                         getChatUser()
+                        val avatarMap = it.associate { it.user.uid to it.user.photoUrl }
+                        messageAdapter.setAvatarMap(avatarMap)
                     }
                 }
                 launch {
@@ -169,7 +177,6 @@ class DetailChatFragment : Fragment() {
                         }
 
                         lastDisplayedLastMsgId = newLastId
-
                         val currentUser = authViewModel.user.value
                         chatViewModel.markMessageAsRead(conversationId, currentUser!!.uid)
                     }

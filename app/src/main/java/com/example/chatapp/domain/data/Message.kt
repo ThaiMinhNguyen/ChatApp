@@ -11,7 +11,7 @@ data class Message(
     val roomId: String = "",
     val senderId: String = "",
     val senderName: String = "",
-    val senderAvatar: String = "",
+    var senderAvatar: String = "",
     val content: String = "",
     val messageType: MessageType = MessageType.TEXT,
     @ServerTimestamp val timestamp: Date? = null,
