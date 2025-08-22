@@ -107,17 +107,21 @@ class SignUpFragment : Fragment() {
 
         binding.btnSignUp.setOnClickListener {
             clearHelperText()
+            val mailHelperText = getString(R.string.email_helper_text)
+            val passwordHelperText = getString(R.string.password_helper_text)
+            val nameHelperText = getString(R.string.full_name_helper_text)
+            val termWarning = getString(R.string.term_warning)
             if(!authViewModel.validateEmail()){
-                binding.tilEmail.helperText = "Please enter a valid email address"
+                binding.tilEmail.helperText = mailHelperText
                 binding.tilEmail.isHelperTextEnabled = true
             } else if (!authViewModel.validatePassword()){
-                binding.tilPassword.helperText = "Password must be at least 6 characters"
+                binding.tilPassword.helperText = passwordHelperText
                 binding.tilEmail.isHelperTextEnabled = true
             } else if (!authViewModel.validateFullName()){
-                binding.tilFullName.helperText = "Please enter your full name"
+                binding.tilFullName.helperText = nameHelperText
                 binding.tilFullName.isHelperTextEnabled = true
             } else if (!binding.cbTerms.isChecked) {
-                Toast.makeText(requireContext(), "Please accept the terms and policies", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), termWarning, Toast.LENGTH_SHORT).show()
             } else {
                 Log.d("MyLog - SignUpScreen", "Email: ${authViewModel.email.value}, Password: ${authViewModel.password.value}, Full Name: ${authViewModel.fullName.value}")
                 authViewModel.signUp()

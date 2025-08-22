@@ -11,7 +11,6 @@ import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.OnReceiveContentListener
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -34,7 +33,6 @@ import com.example.chatapp.utils.UserUtils
 import com.example.chatapp.utils.setImageChatUrl
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.ChatViewModel
-import com.example.chatapp.view_model.StorageViewModel
 import com.example.chatapp.view_model.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -48,7 +46,6 @@ class DetailChatFragment : Fragment() {
     private val chatViewModel: ChatViewModel by activityViewModels()
     private val userViewModel: UserViewModel by activityViewModels()
     private val authViewModel: AuthenticationViewModel by activityViewModels()
-    private val storageViewModel: StorageViewModel by activityViewModels()
 
     private lateinit var messageAdapter: MessageListAdapter
     private lateinit var conversationId: String
@@ -194,9 +191,9 @@ class DetailChatFragment : Fragment() {
                     }
                 }
                 launch {
-                    userViewModel.people.collect{
+                    userViewModel.people.collect{ people ->
                         getChatUser()
-                        val avatarMap = it.associate { it.user.uid to it.user.photoUrl }
+                        val avatarMap = people.associate { it.user.uid to it.user.photoUrl }
                         messageAdapter.setAvatarMap(avatarMap)
                     }
                 }

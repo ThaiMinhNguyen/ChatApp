@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.chatapp.domain.data.User
 import com.example.chatapp.domain.repository.AuthRepository
 import com.example.chatapp.domain.repository.UserRepository
+import com.example.chatapp.utils.Prefs
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import javax.inject.Inject
@@ -15,7 +16,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class AuthenticationViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val prefs: Prefs
 ) : ViewModel() {
 
     private val _email = MutableStateFlow("")
@@ -36,7 +38,14 @@ class AuthenticationViewModel @Inject constructor(
     private val _loading = MutableStateFlow(false)
     val loading get() = _loading
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error get() = _error
+
     private var userJob : Job? = null
+
+    fun onErrorHandle(){
+        _error.value = null
+    }
 
     fun onEmailChange(email: String){
         _email.value = email
@@ -80,6 +89,7 @@ class AuthenticationViewModel @Inject constructor(
                 }
                 .onFailure { exception ->
                     Log.e("MyLog - AuthViewModel", "Sign-in failed: ${exception.message}")
+                    _error.value = "Time out or network error. Please try again later."
                 }
             _loading.value = false
         }
@@ -96,13 +106,12 @@ class AuthenticationViewModel @Inject constructor(
                 }
                 .onFailure { exception ->
                     Log.e("MyLog - AuthViewModel", "Sign-up failed: ${exception.message}")
+                    _error.value = "Time out or network error. Please try again later."
                 }
             _loading.value = false
         }
     }
 
-    fun getCurrentFirebaseUser() = authRepository.getCurrentUser()
-    
     fun restoreSessionIfPossible() {
         viewModelScope.launch {
             _loading.value = true
@@ -118,6 +127,7 @@ class AuthenticationViewModel @Inject constructor(
     }
     
     fun signOut() {
+        prefs.clear()
         _user.value = null
         authRepository.signOut()
     }
@@ -132,8 +142,12 @@ class AuthenticationViewModel @Inject constructor(
                         _user.value = it
                     }
                     .onFailure {
+                        _user.value = _user.value?.copy(displayName = authRepository.getCurrentUser()?.displayName)
                         Log.e("MyLog - AuthViewModel", "Update user profile failed")
+                        _error.value = "Time out or network error. Please try again later."
                     }
+            } catch (e:Exception){
+                Log.e("MyLog - AuthViewModel", "Error updating user profile: ${e.message}")
             } finally {
                 _loading.value = false
             }

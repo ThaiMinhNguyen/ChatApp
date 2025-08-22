@@ -9,13 +9,6 @@ data class People(
     constructor() : this(User(), false, false, false)
 }
 
-
-enum class PeopleAction {
-    TOGGLE_REQUEST_RECEIVED_ACCEPT,
-    TOGGLE_REQUEST_SENT,
-    TOGGLE_REQUEST_RECEIVED_DECLINE
-}
-
 sealed class FriendListItem {
     data class Header(val title: String) : FriendListItem()
     data class PersonItem(val people: People) : FriendListItem()

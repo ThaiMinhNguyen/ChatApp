@@ -2,6 +2,7 @@ package com.example.chatapp.ui.detail_profile_screen
 
 import android.app.Activity
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -158,7 +159,7 @@ class DetailProfileFragment : Fragment() {
                 val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                 calendar.time = dateFormat.parse(currentDate) ?: Date()
             } catch (e: Exception) {
-
+                Log.e("MyLog - DetailProfileFragment", "Error parsing date: ${e.message}")
             }
         }
 

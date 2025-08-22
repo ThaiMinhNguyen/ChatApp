@@ -58,7 +58,7 @@ object FriendListUtils {
 
     private fun getLastNameFirstLetter(people: People): Char {
         val fullName = people.user.displayName
-        return if (fullName != null && fullName.isNotBlank()) {
+        return if (!fullName.isNullOrBlank()) {
             val nameParts = fullName.trim().split("\\s+".toRegex())
             val lastName = nameParts.lastOrNull() ?: ""
             lastName.firstOrNull()?.uppercaseChar() ?: 'Z'
@@ -69,7 +69,7 @@ object FriendListUtils {
 
     private fun getGivenName(people: People): String {
         val fullName = people.user.displayName
-        return if (fullName != null && fullName.isNotBlank()) {
+        return if (!fullName.isNullOrBlank()) {
             val nameParts = fullName.trim().split("\\s+".toRegex())
             nameParts.lastOrNull() ?: ""
         } else {
@@ -77,7 +77,7 @@ object FriendListUtils {
         }
     }
 
-    fun List<People>.sortByGivenNameVietnamese(): List<People> {
+    private fun List<People>.sortByGivenNameVietnamese(): List<People> {
         return this.sortedBy { people ->
             val givenName = getGivenName(people)
             normalizeVietnamese(givenName).lowercase()

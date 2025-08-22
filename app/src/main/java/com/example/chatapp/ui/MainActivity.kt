@@ -22,6 +22,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.chatapp.R
@@ -40,7 +41,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var binding : ActivityMainBinding
-    private lateinit var navController: androidx.navigation.NavController
+    private lateinit var navController: NavController
 
     private val authViewModel: AuthenticationViewModel by viewModels()
     private val userViewModel: UserViewModel by viewModels()
@@ -70,6 +71,9 @@ class MainActivity : AppCompatActivity() {
         // Check if có Deep Link trong onCreate
         hasDeepLink = intent.data != null
         Log.d("MyLog - MainActivity", "onCreate hasDeepLink: $hasDeepLink")
+        if(hasDeepLink){
+            handleDeepLink()
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -241,24 +245,44 @@ class MainActivity : AppCompatActivity() {
     private fun observeAuthState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                authViewModel.user.collect{ user ->
-                    Log.d("MyLog - MainActivity", "observeAuthState: user=${user?.displayName}, hasDeepLink=$hasDeepLink")
-                    if (user == null) {
-                        authViewModel.stopListeningToUserProfile()
-                        navController.navigate(R.id.signInFragment)
-                    } else {
-                        prefs.setRememberLogin(true)
-                        prefs.saveLastUid(user.uid)
-                        userViewModel.startListening(user)
-                        chatViewModel.listenUnreadTotal(user.uid)
-                        chatViewModel.listenUnreadByRoom(user.uid)
-                        if (navController.currentDestination?.id == R.id.signInFragment || navController.currentDestination?.id == R.id.signUpFragment) {
-                            if(hasDeepLink) {
-                                Log.d("MyLog - MainActivity", "Trigger user observe: Handle link")
-                                handleDeepLink()
+                launch {
+                    authViewModel.user.collect { user ->
+                        Log.d(
+                            "MyLog - MainActivity",
+                            "observeAuthState: user=${user?.displayName}, hasDeepLink=$hasDeepLink"
+                        )
+                        if (user == null) {
+                            authViewModel.stopListeningToUserProfile()
+                            if (!prefs.getRememberLogin()) {
+                                navController.navigate(R.id.signInFragment)
+                            } else {
+                                navController.navigate(R.id.homeFragment)
                             }
-                            authViewModel.listenToUserProfile(user.uid)
-                            navController.navigate(R.id.homeFragment)
+                        } else {
+                            prefs.setRememberLogin(true)
+                            prefs.saveLastUid(user.uid)
+                            userViewModel.startListening(user)
+                            chatViewModel.listenUnreadTotal(user.uid)
+                            chatViewModel.listenUnreadByRoom(user.uid)
+                            if (navController.currentDestination?.id == R.id.signInFragment || navController.currentDestination?.id == R.id.signUpFragment) {
+                                if (hasDeepLink) {
+                                    Log.d(
+                                        "MyLog - MainActivity",
+                                        "Trigger user observe: Handle link"
+                                    )
+                                    handleDeepLink()
+                                }
+                                authViewModel.listenToUserProfile(user.uid)
+                                navController.navigate(R.id.homeFragment)
+                            }
+                        }
+                    }
+                }
+                launch {
+                    authViewModel.error.collect { error ->
+                        if (error != null) {
+                            Toast.makeText(this@MainActivity, error, Toast.LENGTH_SHORT).show()
+                            authViewModel.onErrorHandle()
                         }
                     }
                 }

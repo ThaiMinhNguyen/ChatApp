@@ -1,10 +1,10 @@
 package com.example.chatapp.domain.repository
 
-import android.net.Uri
 import android.util.Log
+import androidx.core.net.toUri
 import com.example.chatapp.domain.data.User
-import com.example.chatapp.utils.Prefs
 import com.example.chatapp.utils.DateUtils
+import com.example.chatapp.utils.Prefs
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
@@ -13,9 +13,9 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessaging
-import javax.inject.Inject
 import kotlinx.coroutines.tasks.await
-import androidx.core.net.toUri
+import kotlinx.coroutines.withTimeout
+import javax.inject.Inject
 
 class AuthRepository @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
@@ -99,14 +99,20 @@ class AuthRepository @Inject constructor(
 
     suspend fun updateUserProfile(updateCurrentUser: User): Result<User> {
         return try {
-            val profileUpdates = userProfileChangeRequest {
-                displayName = updateCurrentUser.displayName
-            }
             val user = firebaseAuth.currentUser?: return Result.failure(IllegalStateException("No signed-in user"))
-            userRepository.updateUserProfile(updateCurrentUser).getOrThrow()
-            user.updateProfile(profileUpdates).await()
+            val result = withTimeout(5000) {
+                userRepository.updateUserProfile(updateCurrentUser)
+            }
+            result.onSuccess {
+                Log.d("MyLog - AuthRepo", "User profile updated successfully: ${it.displayName}")
+                val profileUpdates = userProfileChangeRequest {
+                    displayName = updateCurrentUser.displayName
+                }
+                user.updateProfile(profileUpdates)
+            }
             Result.success(updateCurrentUser)
         } catch (e: Exception) {
+            Log.e("MyLog - UserRepo", "Error updating user profile: ${e.message}", e)
             Result.failure(e)
         }
     }

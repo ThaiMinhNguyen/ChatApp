@@ -58,7 +58,7 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setUpView()
         setUpListener()
-        setUpRealTimeListener()
+//        setUpRealTimeListener()
         setUpObserver()
     }
 
@@ -108,6 +108,13 @@ class HomeFragment : Fragment() {
                         roomItemList = roomItems.toList()
                         if(!isSearchMode) {
                             chatListAdapter.submitList(roomItems)
+                        }
+                    }
+                }
+                launch{
+                    authenticationViewModel.user.collect{
+                        if(it != null){
+                            setUpRealTimeListener()
                         }
                     }
                 }

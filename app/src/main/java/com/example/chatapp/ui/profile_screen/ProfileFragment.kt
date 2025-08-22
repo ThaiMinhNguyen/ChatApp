@@ -84,8 +84,6 @@ class ProfileFragment : Fragment(){
 
             llLanguage.setOnClickListener {
                 showLanguageDialog()
-//                Toast.makeText(requireContext(), "Language settings not implemented yet", Toast.LENGTH_SHORT).show()
-
             }
 
             llNotifications.setOnClickListener {

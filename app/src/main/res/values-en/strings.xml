@@ -79,5 +79,9 @@
     <string name="sending">Sending...</string>
     <string name="reply">Reply</string>
     <string name="send">Send</string>
+    <string name="email_helper_text">Please enter a valid email address</string>
+    <string name="password_helper_text">Password must be at least 6 characters</string>
+    <string name="full_name_helper_text">Please enter your full name</string>
+    <string name="term_warning">Please accept the terms and policies</string>
 
 </resources>

@@ -63,7 +63,7 @@ class FriendSelectionAdapter(
             }
         }
 
-        fun toggleSelection(user: User) {
+        private fun toggleSelection(user: User) {
             val isCurrentlySelected = selectedUsers.contains(user.uid)
             
             if (isCurrentlySelected) {

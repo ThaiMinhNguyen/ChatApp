@@ -78,4 +78,8 @@
     <string name="sending">Đang gửi...</string>
     <string name="reply">Trả lời</string>
     <string name="send">Gửi</string>
+    <string name="email_helper_text">Hãy nhập email hợp lệ</string>
+    <string name="password_helper_text">Mật khẩu phải dài ít nhất 6 ký tự</string>
+    <string name="full_name_helper_text">Hãy nhập tên của bạn</string>
+    <string name="term_warning">Hãy đọc và chấp nhận chính sách</string>
 </resources>

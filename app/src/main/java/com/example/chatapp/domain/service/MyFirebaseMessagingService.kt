@@ -89,41 +89,57 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .addRemoteInput(remoteInput)
             .build()
 
+        if(type == "chat") {
+            val notify = NotificationCompat.Builder(this, "chat_messages")
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .addAction(replyAction)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
 
-        val notify = NotificationCompat.Builder(this, "chat_messages")
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
-            .addAction(replyAction)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
 
+            if (messageType == "IMAGE") {
+                Log.d("MyLog - MessageService", "Loading image content: $content")
+                val url =
+                    "https://iqeeolueqpuuyizbecey.supabase.co/storage/v1/object/public/chat_image/$content"
+                Glide.with(this.applicationContext)
+                    .asBitmap()
+                    .load(url)
+                    .into(object : CustomTarget<Bitmap>() {
+                        @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+                        override fun onResourceReady(
+                            resource: Bitmap,
+                            transition: Transition<in Bitmap>?
+                        ) {
+                            notify.setLargeIcon(resource)
+                                .setStyle(
+                                    NotificationCompat.BigPictureStyle().bigPicture(resource)
+                                        .bigLargeIcon(resource)
+                                )
+                            NotificationManagerCompat.from(this@MyFirebaseMessagingService)
+                                .notify(notificationId, notify.build())
+                        }
 
-        if(messageType == "IMAGE") {
-            Log.d("MyLog - MessageService", "Loading image content: $content")
-            val url = "https://iqeeolueqpuuyizbecey.supabase.co/storage/v1/object/public/chat_image/$content"
-            Glide.with(this.applicationContext)
-                .asBitmap()
-                .load(url)
-                .into(object : CustomTarget<Bitmap>() {
-                @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                    notify.setLargeIcon(resource)
-                        .setStyle(
-                            NotificationCompat.BigPictureStyle().bigPicture(resource)
-                                .bigLargeIcon(resource)
-                        )
-                    NotificationManagerCompat.from(this@MyFirebaseMessagingService).notify(notificationId, notify.build())
-                }
-
-                override fun onLoadCleared(placeholder: Drawable?) {}
-                override fun onLoadFailed(errorDrawable: Drawable?) {
-                    super.onLoadFailed(errorDrawable)
-                    Log.e("MyLog - MessageService", "Failed to load image: $errorDrawable")
-                }
-            })
-        } else {
+                        override fun onLoadCleared(placeholder: Drawable?) {}
+                        override fun onLoadFailed(errorDrawable: Drawable?) {
+                            super.onLoadFailed(errorDrawable)
+                            Log.e("MyLog - MessageService", "Failed to load image: $errorDrawable")
+                        }
+                    })
+            } else {
+                notify.setStyle(NotificationCompat.BigTextStyle().bigText(content))
+                NotificationManagerCompat.from(this).notify(notificationId, notify.build())
+            }
+        } else if(type == "friend_request"){
+            val notify = NotificationCompat.Builder(this, "chat_messages")
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
             notify.setStyle(NotificationCompat.BigTextStyle().bigText(content))
             NotificationManagerCompat.from(this).notify(notificationId, notify.build())
         }

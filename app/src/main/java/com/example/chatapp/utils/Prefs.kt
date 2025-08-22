@@ -24,6 +24,9 @@ class Prefs @Inject constructor(
         sharedPrefs.edit { putBoolean(KEY_REMEMBER_LOGIN, remember) }
     }
 
+    fun getRememberLogin(): Boolean {
+        return sharedPrefs.getBoolean(KEY_REMEMBER_LOGIN, false)
+    }
 
     fun saveLastUid(uid: String) {
         sharedPrefs.edit { putString(KEY_LAST_UID, uid) }

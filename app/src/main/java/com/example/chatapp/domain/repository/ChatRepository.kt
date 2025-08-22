@@ -94,9 +94,7 @@ class ChatRepository @Inject constructor(
                 return Result.failure(Exception("Room not found for ID: $roomId"))
             }
             val room = snapshot.toObject(Room::class.java)
-            if (room == null){
-                return Result.failure(Exception("Room fetched null"))
-            }
+                ?: return Result.failure(Exception("Room fetched null"))
             Result.success(room)
         } catch (e: Exception){
             Result.failure(e)
@@ -116,7 +114,7 @@ class ChatRepository @Inject constructor(
 
 
     fun listenRoomFlow(currentUser: User) : Flow<List<Room>> = callbackFlow{
-        var roomList : List<Room> = emptyList()
+        var roomList : List<Room>
         val roomReg = firestore.collection("rooms")
             .whereArrayContains("participants", currentUser.uid)
             .addSnapshotListener{ snapshot, error ->

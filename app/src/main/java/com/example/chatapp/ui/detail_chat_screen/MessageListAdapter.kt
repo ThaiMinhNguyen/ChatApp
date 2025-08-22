@@ -14,7 +14,6 @@ import com.example.chatapp.domain.data.MessageStatus
 import com.example.chatapp.domain.data.MessageType
 import com.example.chatapp.utils.DateUtils
 import com.example.chatapp.utils.setImageChatUrl
-import com.example.chatapp.utils.setImageUrl
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -153,7 +152,7 @@ class MessageListAdapter(
         val curr = getItem(position)
         val next = getItem(position + 1)
         if (curr.timestamp == null || next.timestamp == null) return false
-        return curr.senderId != next.senderId || !isSameDay(curr.timestamp!!, next.timestamp!!)
+        return curr.senderId != next.senderId || !isSameDay(curr.timestamp, next.timestamp)
     }
 
     private fun formatDate(timestamp: Date, today: String, yesterday: String): String {

@@ -1,13 +1,10 @@
 package com.example.chatapp.utils
 
 import android.content.Context
-import android.content.res.Configuration
-import android.os.LocaleList
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
-import java.util.Locale
 import androidx.core.content.edit
+import androidx.core.os.LocaleListCompat
 
 object LanguageManager {
 
@@ -40,10 +37,6 @@ object LanguageManager {
         Log.d("MyLog - Debug Language","App locales: ${appLocale.toLanguageTags()}")
         Log.d("MyLog - Debug Language","${AppCompatDelegate.getApplicationLocales()}")
         Log.d("MyLog - Debug Language","==========================")
-    }
-
-    fun getCurrentLocale(): LocaleListCompat {
-        return AppCompatDelegate.getApplicationLocales()
     }
 
     fun getCurrentLanguageCode(): String {

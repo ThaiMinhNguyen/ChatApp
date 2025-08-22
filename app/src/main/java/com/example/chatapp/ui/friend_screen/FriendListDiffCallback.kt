@@ -2,7 +2,6 @@ package com.example.chatapp.ui.friend_screen
 
 import androidx.recyclerview.widget.DiffUtil
 import com.example.chatapp.domain.data.FriendListItem
-import com.example.chatapp.domain.data.People
 
 class FriendListDiffCallback : DiffUtil.ItemCallback<FriendListItem>() {
 
