@@ -81,6 +81,9 @@ class NotificationReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val result = chatRepository.sendMessage(recipientId, message)
+                    .onSuccess {
+                        chatRepository.updateMessageStatus(message.roomId, message.localId)
+                    }
                 if (result.isSuccess) {
                     Log.d("MyLog - NotificationReceiver", "Message sent successfully")
                     if (appContext != null && notificationId != -1) {

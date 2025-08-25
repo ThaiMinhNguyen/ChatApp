@@ -1,17 +1,23 @@
 package com.example.chatapp.domain.service
 
 import android.Manifest
+import android.app.Activity
+import android.app.Application
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.os.Bundle
 import com.bumptech.glide.request.transition.Transition
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.example.chatapp.R
@@ -29,8 +35,15 @@ import com.google.firebase.messaging.RemoteMessage
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
+    private fun isAppForeground(): Boolean {
+        val state = ProcessLifecycleOwner.get().lifecycle.currentState
+        return state.isAtLeast(Lifecycle.State.STARTED)
+    }
+
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     override fun onMessageReceived(message: RemoteMessage) {
+        if(isAppForeground()) return
+
         Log.d("MyLog - MessageService", "onReceived: ${message.data}")
         
         val type = message.data["type"] ?: "chat"
@@ -90,10 +103,30 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .build()
 
         if(type == "chat") {
+            val senderPerson = Person.Builder()
+                .setName(title)
+                .setKey(senderId)
+                .build()
+
+            val you = this.getString(R.string.you)
+            val myPerson = Person.Builder()
+                .setName(you)
+                .setKey("me")
+                .build()
+
+            val messageStyleContent = NotificationCompat.MessagingStyle.Message(
+                content,
+                System.currentTimeMillis(),
+                senderPerson
+            )
+
+            val style = NotificationCompat.MessagingStyle(myPerson)
+                .addMessage(messageStyleContent)
+                .setConversationTitle(title)
+                .setGroupConversation(false)
+
             val notify = NotificationCompat.Builder(this, "chat_messages")
                 .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(title)
-                .setContentText(body)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .addAction(replyAction)
@@ -118,6 +151,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                     NotificationCompat.BigPictureStyle().bigPicture(resource)
                                         .bigLargeIcon(resource)
                                 )
+                                .setContentTitle(title)
+                                .setContentText(body)
                             NotificationManagerCompat.from(this@MyFirebaseMessagingService)
                                 .notify(notificationId, notify.build())
                         }
@@ -129,7 +164,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                         }
                     })
             } else {
-                notify.setStyle(NotificationCompat.BigTextStyle().bigText(content))
+                notify.setStyle(style)
+                    .setAutoCancel(true)
+                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+
                 NotificationManagerCompat.from(this).notify(notificationId, notify.build())
             }
         } else if(type == "friend_request"){
