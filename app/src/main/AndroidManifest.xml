@@ -29,7 +29,10 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.ChatApp.Starting">
+            android:theme="@style/Theme.ChatApp.Starting"
+            android:allowEmbedded="true"
+            android:resizeableActivity="true"
+            >
 
             <nav-graph android:value="@navigation/nav_graph" />
 

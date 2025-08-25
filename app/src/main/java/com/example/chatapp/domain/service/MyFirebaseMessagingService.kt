@@ -1,20 +1,18 @@
 package com.example.chatapp.domain.service
 
 import android.Manifest
-import android.app.Activity
-import android.app.Application
+import androidx.core.app.Person
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
-import android.os.Bundle
 import com.bumptech.glide.request.transition.Transition
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.Person
 import androidx.core.app.RemoteInput
+import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -54,6 +52,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val clickAction = message.data["click_action"]
         val content = message.data["content"] ?: ""
         val messageType = message.data["messageType"] ?: "TEXT"
+        val senderPhotoUrl = message.data["senderPhotoUrl"] ?: ""
+        val senderName = message.data["senderName"] ?: "Người gửi"
         
         Log.d("MyLog - MessageService", "Type: $type")
         Log.d("MyLog - MessageService", "Click action: $clickAction")
@@ -103,27 +103,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .build()
 
         if(type == "chat") {
-            val senderPerson = Person.Builder()
-                .setName(title)
-                .setKey(senderId)
-                .build()
-
-            val you = this.getString(R.string.you)
-            val myPerson = Person.Builder()
-                .setName(you)
-                .setKey("me")
-                .build()
-
-            val messageStyleContent = NotificationCompat.MessagingStyle.Message(
-                content,
-                System.currentTimeMillis(),
-                senderPerson
-            )
-
-            val style = NotificationCompat.MessagingStyle(myPerson)
-                .addMessage(messageStyleContent)
-                .setConversationTitle(title)
-                .setGroupConversation(false)
 
             val notify = NotificationCompat.Builder(this, "chat_messages")
                 .setSmallIcon(R.drawable.ic_notification)
@@ -164,11 +143,49 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                         }
                     })
             } else {
-                notify.setStyle(style)
-                    .setAutoCancel(true)
-                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
 
-                NotificationManagerCompat.from(this).notify(notificationId, notify.build())
+                Glide.with(this)
+                    .asBitmap()
+                    .load(senderPhotoUrl)
+                    .into(object : CustomTarget<Bitmap>() {
+                        @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+                        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                            val icon = IconCompat.createWithBitmap(resource)
+
+                            val senderPerson = Person.Builder()
+                                .setName(senderName)
+                                .setKey(senderId)
+                                .setIcon(icon)
+                                .build()
+
+                            val you = this@MyFirebaseMessagingService.getString(R.string.you)
+                            val myPerson = Person.Builder()
+                                .setName(you)
+                                .setKey("me")
+                                .build()
+
+                            val messageStyleContent = NotificationCompat.MessagingStyle.Message(
+                                content,
+                                System.currentTimeMillis(),
+                                senderPerson
+                            )
+
+                            val style = NotificationCompat.MessagingStyle(myPerson)
+                                .addMessage(messageStyleContent)
+                                .setConversationTitle(title)
+                                .setGroupConversation(true)
+
+                            notify.setStyle(style)
+                                .setAutoCancel(true)
+                                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+
+                            NotificationManagerCompat.from(this@MyFirebaseMessagingService).notify(notificationId, notify.build())
+
+                        }
+
+                        override fun onLoadCleared(placeholder: Drawable?) {}
+                    })
+
             }
         } else if(type == "friend_request"){
             val notify = NotificationCompat.Builder(this, "chat_messages")
