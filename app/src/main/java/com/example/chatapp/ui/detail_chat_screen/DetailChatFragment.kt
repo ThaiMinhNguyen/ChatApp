@@ -203,7 +203,6 @@ class DetailChatFragment : Fragment() {
                         val prevLastId = lastDisplayedLastMsgId
                         val newLastId = newList.lastOrNull()?.uid
                         val lastChanged = newLastId != prevLastId
-
                         messageList = newList
                         messageAdapter.submitList(newList)
 

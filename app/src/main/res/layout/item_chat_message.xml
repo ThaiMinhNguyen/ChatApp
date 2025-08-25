@@ -150,23 +150,10 @@
             android:layout_marginTop="4dp"
             android:fontFamily="@font/lato_regular"
             android:gravity="end"
+            android:text="@string/sending"
             tools:text="10:05"
             android:textColor="#999999"
             android:textSize="12sp" />
-
-        <TextView
-            android:id="@+id/tvSentStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
-            android:layout_marginTop="2dp"
-            android:fontFamily="@font/lato_regular"
-            android:gravity="end"
-            android:textColor="#999999"
-            android:textSize="12sp"
-            android:visibility="gone"
-            tools:text="Đang gửi..."
-            tools:visibility="visible" />
 
     </LinearLayout>
 

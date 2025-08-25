@@ -1,5 +1,6 @@
 package com.example.chatapp.ui.detail_chat_screen
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,11 +31,12 @@ class MessageListAdapter(
     fun setAvatarMap(avatarMap: Map<String, String?>) {
         this.avatarMap = avatarMap
         for (i in 0 until itemCount) {
+            val payload = "AVATAR_CHANGED"
             val message = getItem(i)
             val newAvatar = avatarMap[message.senderId]
             val oldAvatar = message.senderAvatar
             if (newAvatar != oldAvatar) {
-                notifyItemChanged(i)
+                notifyItemChanged(i, payload)
             }
         }
     }
@@ -59,7 +61,7 @@ class MessageListAdapter(
                 llReceivedMessage.visibility = if (!isSent) View.VISIBLE else View.GONE
 
                 if (isSent) {
-
+                    val sendingText = binding.root.context.getString(R.string.sending)
                     if(message.messageType == MessageType.IMAGE) {
                         ivSentImage.visibility = View.VISIBLE
                         ivSentImage.setImageChatUrl(message.content)
@@ -69,18 +71,19 @@ class MessageListAdapter(
                         tvSentMessage.visibility = View.VISIBLE
                     }
                     tvSentMessage.text = message.content
-                    if (showTime && message.timestamp != null) {
-                        tvSentTime.text = formatTime(message.timestamp)
+                    if (showTime) {
+                        if(message.messageStatus == MessageStatus.SENDING) {
+                            tvSentTime.text = sendingText
+                        } else if (message.timestamp != null) {
+                            tvSentTime.text = formatTime(message.timestamp)
+                        } else {
+                            tvSentTime.text = ""
+                        }
                         tvSentTime.visibility = View.VISIBLE
                     } else {
                         tvSentTime.visibility = View.GONE
                     }
-                    if(message.messageStatus == MessageStatus.SENDING){
-                        tvSentStatus.visibility = View.VISIBLE
-                        tvSentStatus.text = itemView.context.getString(R.string.sending)
-                    } else {
-                        tvSentStatus.visibility = View.GONE
-                    }
+
                 } else {
                     if(message.messageType == MessageType.IMAGE) {
                         ivReceivedImage.visibility = View.VISIBLE
@@ -97,8 +100,8 @@ class MessageListAdapter(
                     } else {
                         tvReceivedTime.visibility = View.GONE
                     }
-                    // Load avatar
 
+                    // Load avatar
                     val userAvatar = avatarMap[message.senderId] ?: message.senderAvatar
 
                     Glide.with(civSenderAvatar)
@@ -108,10 +111,28 @@ class MessageListAdapter(
                 }
 
             }
+
+        }
+        fun bindMessageStatus(message: Message) {
+            val sendingText = binding.root.context.getString(R.string.sending)
+            if(message.timestamp != null) {
+                binding.tvSentTime.text = formatTime(message.timestamp)
+            } else if (message.messageStatus == MessageStatus.SENDING) {
+                binding.tvSentTime.text = sendingText
+            } else {
+                binding.tvSentTime.visibility = View.GONE
+            }
         }
 
-
-
+        fun bindAvatar(message: Message) {
+            if (message.senderId != currentUserId) {
+                val userAvatar = avatarMap[message.senderId] ?: message.senderAvatar
+                Glide.with(binding.civSenderAvatar)
+                    .load(userAvatar)
+                    .placeholder(R.drawable.ic_user_mail)
+                    .into(binding.civSenderAvatar)
+            }
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
@@ -121,6 +142,27 @@ class MessageListAdapter(
         return MessageViewHolder(binding)
     }
 
+
+    override fun onBindViewHolder(
+        holder: MessageViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if(payloads.isNotEmpty()) {
+            Log.d("MyLog - Adapter", "Partial bind at position $position")
+            if (payloads.contains("MESSAGE_STATUS_CHANGED")) {
+                val message = getItem(position)
+                holder.bindMessageStatus(message)
+            } else if (payloads.contains("TIMESTAMP_CHANGED")) {
+                //Timestamp sẽ được cập nhật trước sau đó mới update message status nên chỉ cần bind lại message status, tránh bìnd lại nhiều lần
+            } else if (payloads.contains("AVATAR_CHANGED")) {
+                val message = getItem(position)
+                holder.bindAvatar(message)
+            }
+            return
+        }
+        super.onBindViewHolder(holder, position, payloads)
+    }
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
         val today = getString(holder.itemView.context, R.string.today)
         val yesterday = getString(holder.itemView.context, R.string.yesterday)
@@ -128,6 +170,8 @@ class MessageListAdapter(
         val showDateSeparator = shouldShowDateSeparator(position)
         val dateText = if (showDateSeparator && message.timestamp != null) formatDate(message.timestamp, today, yesterday) else null
         val showTime = shouldShowTime(position)
+        Log.d("MyLog - Adapter", "Full bind at position $position - showDateSeparator: $showDateSeparator, dateText: $dateText, showTime: $showTime, message: ${message.uid}")
+//        Log.d("MyLog - Adapter", message.toString())
         holder.bind(message, showDateSeparator, dateText, showTime)
     }
 
@@ -148,7 +192,7 @@ class MessageListAdapter(
     }
 
     private fun shouldShowTime(position: Int): Boolean {
-        if (position == itemCount - 1) return getItem(position).timestamp != null
+        if (position == itemCount - 1) return true
         val curr = getItem(position)
         val next = getItem(position + 1)
         if (curr.timestamp == null || next.timestamp == null) return false
