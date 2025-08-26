@@ -77,7 +77,6 @@ class DetailChatFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val args: DetailChatFragmentArgs by navArgs()
         conversationId = args.chatConversationId
-        setUpView()
         setUpRecyclerView()
         setUpRealtimeListener()
         setUpObserver()
@@ -100,7 +99,7 @@ class DetailChatFragment : Fragment() {
 
     private fun getChatUser(){
         val currentUser = authViewModel.user.value
-        val otherUserId = UserUtils.getOtherId(conversationId, currentUser!!.uid)
+        val otherUserId = UserUtils.getOtherId(conversationId, currentUser?.uid ?: authViewModel.getCurrentUser()!!.uid)
         val otherUser = userViewModel.people.value.find { it.user.uid == otherUserId }?.user
         chatViewModel.setCurrentChatUser(otherUser)
     }
@@ -184,10 +183,19 @@ class DetailChatFragment : Fragment() {
     private fun setUpObserver(){
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED){
+                launch{
+                    authViewModel.user.collect{ _ ->
+                        setUpRealtimeListener()
+                        setUpListener()
+                    }
+                }
                 launch {
                     chatViewModel.currentChatUser.collect{
                         user = it
-                        updateUI()
+                        if(it != null){
+                            setUpView()
+                            updateUI()
+                        }
                     }
                 }
                 launch {
@@ -215,7 +223,7 @@ class DetailChatFragment : Fragment() {
 
                         lastDisplayedLastMsgId = newLastId
                         val currentUser = authViewModel.user.value
-                        chatViewModel.markMessageAsRead(conversationId, currentUser!!.uid)
+                        chatViewModel.markMessageAsRead(conversationId, currentUser?.uid ?: "")
                     }
                 }
             }
@@ -252,7 +260,7 @@ class DetailChatFragment : Fragment() {
 
     private fun setUpRecyclerView() {
         val currentUser = authViewModel.user.value
-        messageAdapter = MessageListAdapter(currentUser!!.uid)
+        messageAdapter = MessageListAdapter(currentUser?.uid ?: authViewModel.getCurrentUser()!!.uid)
         binding.rvChatMessages.apply {
             adapter = messageAdapter
             layoutManager = LinearLayoutManager(context).apply {

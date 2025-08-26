@@ -42,10 +42,7 @@
             android:name="chatConversationId"
             app:argType="string" />
         <deepLink
-            android:id="@+id/deepLink"
-            android:autoVerify="true"
-            app:action="ACTION_VIEW"
-            app:uri="chatapp://chat/{chatConversationId}" />
+            app:uri="chatapp://chat/chatDetail/{chatConversationId}" />
     </fragment>
 
     <fragment
@@ -64,17 +61,17 @@
         android:label="FriendFragment"
         tools:layout="@layout/friend_screen">
         <deepLink
-            android:id="@+id/deepLink2"
-            android:autoVerify="true"
-            app:action="ACTION_VIEW"
-            app:uri="chatapp://friends" />
+            app:uri="chatapp://chat/friends" />
     </fragment>
 
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.example.chatapp.ui.profile_screen.ProfileFragment"
         android:label="ProfileFragment"
-        tools:layout="@layout/profile_screen"/>
+        tools:layout="@layout/profile_screen">
+        <deepLink
+            app:uri="chatapp://chat/nav/profile" />
+    </fragment>
 
     <fragment
         android:id="@+id/detailProfileFragment"

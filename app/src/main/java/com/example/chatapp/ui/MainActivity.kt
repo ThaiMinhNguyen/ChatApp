@@ -23,11 +23,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
+import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.chatapp.R
 import com.example.chatapp.databinding.ActivityMainBinding
-import com.example.chatapp.ui.home_screen.HomeFragmentDirections
 import com.example.chatapp.utils.Prefs
 import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.ChatViewModel
@@ -68,7 +68,6 @@ class MainActivity : AppCompatActivity() {
         observeAuthState()
         setUpObserver()
 
-        // Check if có Deep Link trong onCreate
         hasDeepLink = intent.data != null
         Log.d("MyLog - MainActivity", "onCreate hasDeepLink: $hasDeepLink")
         if(hasDeepLink){
@@ -100,30 +99,14 @@ class MainActivity : AppCompatActivity() {
             navController.handleDeepLink(intent)
 
             val uri = intent.data
-            if (uri?.scheme == "chatapp" && uri.host == "chat") {
-                val roomId = uri.lastPathSegment
-                if (!roomId.isNullOrEmpty()) {
-                    Log.d("MyLog - MainActivity", "Manual navigation to room: $roomId")
-                    binding.root.post {
-                        try {
-                            val action = HomeFragmentDirections.actionHomeFragmentToDetailChatFragment(roomId)
-                            navController.navigate(action)
-                            hasDeepLink = false
-                            Log.d("MyLog - MainActivity", "Navigation completed successfully")
-                        } catch (e: Exception) {
-                            Log.e("MyLog - MainActivity", "Navigation failed: ${e.message}")
-                        }
-                    }
-                    hasDeepLink = false
-                }
-            } else if (uri?.scheme == "chatapp" && uri.host == "friends") {
-                Log.d("MyLog - MainActivity", "Manual navigation to friends")
-                binding.root.post {
-                    navController.navigate(R.id.friendFragment)
-                }
+            Log.d("MyLog - MainActivity", "Click deepink: ${uri.toString()}")
+            val request = NavDeepLinkRequest.Builder
+                .fromUri(uri ?: return)
+                .build()
+            binding.root.post{
+                navController.navigate(request)
                 hasDeepLink = false
             }
-
         } else {
             Log.d("MyLog - MainActivity", "NavController not initialized")
         }

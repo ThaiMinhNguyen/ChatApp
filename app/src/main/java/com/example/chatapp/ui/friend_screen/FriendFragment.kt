@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.text.TextWatcher
 import android.util.Log
@@ -36,6 +37,9 @@ import com.example.chatapp.view_model.AuthenticationViewModel
 import com.example.chatapp.view_model.UserViewModel
 import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
+import androidx.navigation.NavDeepLinkRequest
+import androidx.navigation.fragment.findNavController
 
 class FriendFragment : Fragment() {
     private var _binding : FriendScreenBinding? = null
@@ -74,6 +78,13 @@ class FriendFragment : Fragment() {
         binding.tvCancel.setOnClickListener {
             switchToNormalMode()
             binding.etSearch.text?.clear()
+        }
+        //Test deeplink
+        binding.btnAddFriend.setOnClickListener {
+            val request = NavDeepLinkRequest.Builder
+                .fromUri("chatapp://chat/nav/profile".toUri())
+                .build()
+            findNavController().navigate(request)
         }
 
     }

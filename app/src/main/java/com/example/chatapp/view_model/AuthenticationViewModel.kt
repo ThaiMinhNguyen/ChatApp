@@ -95,6 +95,8 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
+    fun getCurrentUser() = authRepository.getCurrentUser()
+
     fun signUp() {
         _loading.value = true
 
