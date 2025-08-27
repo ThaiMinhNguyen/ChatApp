@@ -9,8 +9,14 @@ import com.example.chatapp.domain.data.User
 import com.example.chatapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 
@@ -18,26 +24,26 @@ import kotlinx.coroutines.launch
 class UserViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
-    private val _people = MutableStateFlow<List<People>>(emptyList())
-    val people get() = _people
-
     private val _loading = MutableStateFlow(false)
-    val loading get() = _loading
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
-    private var peopleJob: Job? = null
+    private val currentUser = MutableStateFlow<User?>(null)
 
-    fun startListening(currentUser: User) {
-        peopleJob?.cancel()
-        peopleJob = viewModelScope.launch {
-            userRepository.listenPeopleFlow(currentUser).collect { peopleList ->
-                _people.value = peopleList
-            }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val people: StateFlow<List<People>> = currentUser
+        .filterNotNull()
+        .flatMapLatest { user ->
+            Log.d("MyLog - UserViewModel", "Current user: $user")
+            userRepository.listenPeopleFlow(user)
         }
-    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    fun stopAllListeners() {
-        peopleJob?.cancel()
-        peopleJob = null
+    fun setCurrentUser(user: User?) {
+        currentUser.value = user
     }
 
     fun toggleFriendRequest(currentUser: User, sendToUser: User, status: FriendshipStatus){
@@ -52,12 +58,5 @@ class UserViewModel @Inject constructor(
             _loading.value = false
         }
     }
-
-    override fun onCleared() {
-        super.onCleared()
-        stopAllListeners()
-    }
-
-
 
 }

@@ -230,6 +230,7 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     authViewModel.user.collect { user ->
+                        userViewModel.setCurrentUser(user)
                         Log.d("MyLog - MainActivity", "observeAuthState: user=${user?.displayName}, hasDeepLink=$hasDeepLink")
                         if (user == null) {
                             if (!prefs.getRememberLogin()) {
@@ -238,7 +239,6 @@ class MainActivity : AppCompatActivity() {
                                 navController.navigate(R.id.homeFragment)
                             }
                         } else {
-                            userViewModel.startListening(user)
                             chatViewModel.listenUnreadTotal(user.uid)
                             chatViewModel.listenUnreadByRoom(user.uid)
                             if (navController.currentDestination?.id == R.id.signInFragment || navController.currentDestination?.id == R.id.signUpFragment) {
@@ -268,7 +268,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        userViewModel.stopAllListeners()
         chatViewModel.stopUnreadListeners()
         chatViewModel.stopListenTopRooms()
     }

@@ -149,7 +149,7 @@ class MessageListAdapter(
         payloads: MutableList<Any>
     ) {
         if(payloads.isNotEmpty()) {
-            Log.d("MyLog - Adapter", "Partial bind at position $position")
+            Log.d("MyLog - Adapter", "Partial bind at position $position | payloads: $payloads")
             if (payloads.contains("MESSAGE_STATUS_CHANGED")) {
                 val message = getItem(position)
                 holder.bindMessageStatus(message)
@@ -171,7 +171,7 @@ class MessageListAdapter(
         val dateText = if (showDateSeparator && message.timestamp != null) formatDate(message.timestamp, today, yesterday) else null
         val showTime = shouldShowTime(position)
         Log.d("MyLog - Adapter", "Full bind at position $position - showDateSeparator: $showDateSeparator, dateText: $dateText, showTime: $showTime, message: ${message.uid}")
-//        Log.d("MyLog - Adapter", message.toString())
+        Log.d("MyLog - Adapter", message.toString())
         holder.bind(message, showDateSeparator, dateText, showTime)
     }
 
