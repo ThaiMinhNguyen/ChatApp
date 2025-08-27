@@ -1,6 +1,8 @@
 package com.example.chatapp.ui.profile_screen
 
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -87,7 +89,10 @@ class ProfileFragment : Fragment(){
             }
 
             llNotifications.setOnClickListener {
-                Toast.makeText(requireContext(), "Notification settings not implemented yet", Toast.LENGTH_SHORT).show()
+                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName)
+                }
+                startActivity(intent)
             }
 
             ivEditProfile.setOnClickListener {
