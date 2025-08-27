@@ -58,7 +58,6 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setUpView()
         setUpListener()
-//        setUpRealTimeListener()
         setUpObserver()
     }
 

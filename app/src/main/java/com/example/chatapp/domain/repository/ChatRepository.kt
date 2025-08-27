@@ -84,22 +84,6 @@ class ChatRepository @Inject constructor(
             }
         awaitClose { reg.remove() }
     }
-    suspend fun getRoom(currentUser: User, chosenUser: User) : Result<Room>{
-        return try {
-            val roomId = UserUtils.generateId(currentUser.uid, chosenUser.uid)
-            val docRefs = firestore.collection("rooms")
-            val snapshot = docRefs.document(roomId).get().await()
-            if(!snapshot.exists()){
-                Log.w("MyLog - UserRepo", "Document not found for roomId: $roomId")
-                return Result.failure(Exception("Room not found for ID: $roomId"))
-            }
-            val room = snapshot.toObject(Room::class.java)
-                ?: return Result.failure(Exception("Room fetched null"))
-            Result.success(room)
-        } catch (e: Exception){
-            Result.failure(e)
-        }
-    }
 
     suspend fun updateRoom(room: Room, message: Message) : Result<Room>{
         return try {

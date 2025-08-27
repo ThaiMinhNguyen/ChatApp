@@ -17,4 +17,15 @@ class ChatListUiDiffCallback : DiffUtil.ItemCallback<ChatListItem>() {
     override fun areContentsTheSame(oldItem: ChatListItem, newItem: ChatListItem): Boolean {
         return oldItem == newItem
     }
+
+    override fun getChangePayload(oldItem: ChatListItem, newItem: ChatListItem): Any? {
+        if (oldItem is ChatListItem.RoomItem && newItem is ChatListItem.RoomItem){
+            if (oldItem.unread != newItem.unread) {
+                return "UNREAD_COUNT_CHANGED"
+            } else if (oldItem.room.lastMessage != newItem.room.lastMessage || oldItem.room.lastMessageTime != newItem.room.lastMessageTime) {
+                return "LAST_MESSAGE_CHANGED"
+            }
+        }
+        return null
+    }
 }

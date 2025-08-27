@@ -2,6 +2,7 @@ package com.example.chatapp.ui.home_screen
 
 import android.annotation.SuppressLint
 import android.graphics.Typeface
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
@@ -55,6 +56,39 @@ class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatListI
             }
         }
 
+        fun bindUnread(item: ChatListItem.RoomItem){
+            binding.apply {
+                if (item.unread > 0) {
+                    tvLastMessage.setTypeface(null, Typeface.BOLD)
+                    tvLastMessage.setTextColor(
+                        ContextCompat.getColor(
+                            itemView.context,
+                            R.color.black
+                        )
+                    )
+                    tvUnreadCount.visibility = android.view.View.VISIBLE
+                    tvUnreadCount.text = item.unread.toString()
+                } else {
+                    tvLastMessage.setTypeface(null, Typeface.NORMAL)
+                    tvLastMessage.setTextColor(
+                        ContextCompat.getColor(
+                            itemView.context,
+                            R.color.icon_dark_gray
+                        )
+                    )
+                    tvUnreadCount.visibility = android.view.View.GONE
+                }
+            }
+        }
+
+        fun bindLastMessage(item: ChatListItem.RoomItem) {
+            val room = item.room
+            binding.apply {
+                tvLastMessage.text = room.lastMessage ?: ""
+                tvTime.text = room.lastMessageTime?.let { formatTime(it) } ?: ""
+            }
+        }
+
         private fun formatTime(timestamp: Date): String {
             val nowMs = System.currentTimeMillis()
             val tsMs = timestamp.time
@@ -101,5 +135,24 @@ class ChatListAdapter(val onItemClick: (String) -> Unit) : ListAdapter<ChatListI
             is ChatListItem.RoomItem -> (holder as ChatViewHolder).bind(item)
             is ChatListItem.SearchResultItem -> (holder as SearchResultViewHolder).bind(item)
         }
+    }
+
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if(payloads.contains("UNREAD_COUNT_CHANGED") && holder is ChatViewHolder){
+            Log.d("MyLog - ChatListAdapter", "onBindViewHolder with payloads: $payloads at position $position")
+            val item = getItem(position) as ChatListItem.RoomItem
+            holder.bindUnread(item)
+            return
+        } else if(payloads.contains("LAST_MESSAGE_CHANGED") && holder is ChatViewHolder){
+            Log.d("MyLog - ChatListAdapter", "onBindViewHolder with payloads: $payloads at position $position")
+            val item = getItem(position) as ChatListItem.RoomItem
+            holder.bindLastMessage(item)
+            return
+        }
+        super.onBindViewHolder(holder, position, payloads)
     }
 }
