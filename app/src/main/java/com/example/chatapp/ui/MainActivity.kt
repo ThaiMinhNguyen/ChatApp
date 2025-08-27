@@ -230,20 +230,14 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     authViewModel.user.collect { user ->
-                        Log.d(
-                            "MyLog - MainActivity",
-                            "observeAuthState: user=${user?.displayName}, hasDeepLink=$hasDeepLink"
-                        )
+                        Log.d("MyLog - MainActivity", "observeAuthState: user=${user?.displayName}, hasDeepLink=$hasDeepLink")
                         if (user == null) {
-                            authViewModel.stopListeningToUserProfile()
                             if (!prefs.getRememberLogin()) {
                                 navController.navigate(R.id.signInFragment)
                             } else {
                                 navController.navigate(R.id.homeFragment)
                             }
                         } else {
-                            prefs.setRememberLogin(true)
-                            prefs.saveLastUid(user.uid)
                             userViewModel.startListening(user)
                             chatViewModel.listenUnreadTotal(user.uid)
                             chatViewModel.listenUnreadByRoom(user.uid)
@@ -255,7 +249,6 @@ class MainActivity : AppCompatActivity() {
                                     )
                                     handleDeepLink()
                                 }
-                                authViewModel.listenToUserProfile(user.uid)
                                 navController.navigate(R.id.homeFragment)
                             }
                         }
@@ -278,7 +271,6 @@ class MainActivity : AppCompatActivity() {
         userViewModel.stopAllListeners()
         chatViewModel.stopUnreadListeners()
         chatViewModel.stopListenTopRooms()
-        authViewModel.stopListeningToUserProfile()
     }
 
 

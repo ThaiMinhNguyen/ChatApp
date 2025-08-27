@@ -8,9 +8,15 @@ import com.example.chatapp.domain.repository.AuthRepository
 import com.example.chatapp.domain.repository.UserRepository
 import com.example.chatapp.utils.Prefs
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -21,27 +27,40 @@ class AuthenticationViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _email = MutableStateFlow("")
-    val email get() = _email
+    val email: StateFlow<String> = _email.asStateFlow()
 
     private val _password = MutableStateFlow("")
-    val password get() = _password
+    val password: StateFlow<String> = _password.asStateFlow()
 
     private val _fullName = MutableStateFlow("")
-    val fullName get() = _fullName
+    val fullName: StateFlow<String> = _fullName.asStateFlow()
 
     private val _isAllFilled = MutableStateFlow(false)
-    val isAllFilled get() = _isAllFilled
+    val isAllFilled: StateFlow<Boolean> = _isAllFilled.asStateFlow()
 
     private val _user = MutableStateFlow<User?>(null)
-    val user get() = _user
 
     private val _loading = MutableStateFlow(false)
-    val loading get() = _loading
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
-    val error get() = _error
+    val error: StateFlow<String?> = _error.asStateFlow()
 
-    private var userJob : Job? = null
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val user : StateFlow<User?> = _user
+        .flatMapLatest { user ->
+            if (user != null) {
+                userRepository.listenToUserById(user.uid)
+            } else {
+                flowOf(null)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
 
     fun onErrorHandle(){
         _error.value = null
@@ -84,6 +103,8 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.signInWithEmailAndPassword(email.value, password.value)
                 .onSuccess { user ->
+                    prefs.setRememberLogin(true)
+                    prefs.saveLastUid(user.uid)
                     _user.value = user
                     Log.d("MyLog - AuthViewModel", "Sign-in successful: ${user.displayName}")
                 }
@@ -103,6 +124,8 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.signUpWithEmailAndPassword(email.value, password.value, fullName.value)
                 .onSuccess { user ->
+                    prefs.setRememberLogin(true)
+                    prefs.saveLastUid(user.uid)
                     _user.value = user
                     Log.d("MyLog - AuthViewModel", "Sign-up successful: ${user.displayName}")
                 }
@@ -127,7 +150,7 @@ class AuthenticationViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun signOut() {
         prefs.clear()
         _user.value = null
@@ -154,21 +177,6 @@ class AuthenticationViewModel @Inject constructor(
                 _loading.value = false
             }
         }
-    }
-
-    fun listenToUserProfile(uid: String) {
-        userJob?.cancel()
-        userJob = viewModelScope.launch {
-            userRepository.listenToUserById(uid).collect { user ->
-                Log.d("MyLog - AuthViewModel", "User profile updated: ${user.displayName}")
-                _user.value = user
-            }
-        }
-    }
-
-    fun stopListeningToUserProfile() {
-        userJob?.cancel()
-        userJob = null
     }
 
 }
