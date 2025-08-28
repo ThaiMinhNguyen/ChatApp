@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -43,6 +44,18 @@ class SignInFragment : Fragment() {
         setUpView()
         setUpObserver()
         setUpListener()
+    }
+
+    private var orig = 0
+    override fun onResume() {
+        super.onResume()
+        val w = requireActivity().window
+        orig = w.attributes.softInputMode
+        w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+    }
+    override fun onPause() {
+        requireActivity().window.setSoftInputMode(orig)
+        super.onPause()
     }
 
     private fun setUpView(){
