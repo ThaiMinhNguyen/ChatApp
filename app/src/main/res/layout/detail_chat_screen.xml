@@ -48,7 +48,6 @@
             android:layout_weight="1"
             android:fontFamily="@font/lato_bold"
             android:textStyle="bold"
-            android:text="Trần Hương Mai"
             android:textColor="@color/black"
             android:textSize="18sp"
             tools:ignore="HardcodedText" />

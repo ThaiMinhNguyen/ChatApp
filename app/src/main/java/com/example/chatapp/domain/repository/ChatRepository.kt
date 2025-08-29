@@ -248,7 +248,13 @@ class ChatRepository @Inject constructor(
     }
 
     suspend fun updateRoomMessagesIsRead(roomId: String, currentUserId: String) : Result<Unit>{
+        Log.d("MyLog - ChatRepo", "Updating messages to read in room $roomId for user $currentUserId")
         return try {
+            firestore.collection("rooms")
+                .document(roomId)
+                .update(mapOf("unreadCounts.$currentUserId" to 0))
+                .await()
+
             val messagesQuery = firestore.collection("rooms")
                 .document(roomId)
                 .collection("messages")
@@ -270,10 +276,6 @@ class ChatRepository @Inject constructor(
                 batch.commit().await()
             }
 
-            firestore.collection("rooms")
-                .document(roomId)
-                .update(mapOf("unreadCounts.$currentUserId" to 0))
-                .await()
 
             Result.success(Unit)
         } catch (e: Exception) {
