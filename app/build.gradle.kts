@@ -15,6 +15,15 @@ android {
     namespace = "com.example.chatapp"
     compileSdk = 35
 
+    signingConfigs{
+        create("release"){
+            storeFile = file("D:\\WorkSpace2\\Android\\keys\\app-release.jks")
+            storePassword = "22012003"
+            keyAlias = "key0"
+            keyPassword = "22012003"
+        }
+    }
+
     buildFeatures{
         viewBinding = true
         buildConfig = true
@@ -48,6 +57,7 @@ android {
             )
             buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", properties.getProperty("SUPABASE_PUBLISHABLE_KEY"))
             buildConfigField("String", "SUPABASE_URL", properties.getProperty("SUPABASE_URL"))
+            signingConfig = signingConfigs.getByName("debug")
 
         }
         debug {
