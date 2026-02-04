@@ -87,6 +87,7 @@ class FriendScreen extends StatelessWidget {
                       Row(
                         children: [
                           Tab(text: 'YÊU CẦU'),
+                          SizedBox(width: 5,),
                           CustomBadgeLabel(labelText: '1'),
                         ],
                       ),

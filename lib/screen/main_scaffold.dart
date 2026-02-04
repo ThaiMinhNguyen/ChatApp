@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../common/gradient_box.dart';
 import '../constant/app_constant.dart';
 
 class MainScaffold extends StatelessWidget {
@@ -45,19 +46,7 @@ class MainScaffold extends StatelessWidget {
 
     return Stack(
       children: [
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.3,
-          width: double.infinity,
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF4356B4), Color(0xFF3DCFCF)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
-        ),
+        GradientBox(),
         Scaffold(
           backgroundColor: Colors.transparent,
           appBar: hideAppBar
@@ -79,12 +68,7 @@ class MainScaffold extends StatelessWidget {
                         onPressed: () {
                           switch (currentIndex) {
                             case 0:
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Tin nhắn'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
+                              if(context.mounted) context.push('/create_new_message');
                               break;
                             case 1:
                               ScaffoldMessenger.of(context).showSnackBar(

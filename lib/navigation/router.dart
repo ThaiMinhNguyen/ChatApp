@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_study/screen/create_new_message/create_new_message_screen.dart';
 import 'package:flutter_study/screen/profile/detail_profile_screen.dart';
 import 'package:flutter_study/screen/login/login_screen.dart';
 import 'package:flutter_study/screen/login/register_screen.dart';
@@ -67,6 +68,12 @@ final router = GoRouter(
         path: '/register',
         pageBuilder: (context, state) {
           return NoTransitionPage(child: RegisterScreen());
+        },
+      ),
+      GoRoute(
+        path: '/create_new_message',
+        pageBuilder: (context, state) {
+          return NoTransitionPage(child: CreateNewMessageScreen());
         },
       ),
     ]

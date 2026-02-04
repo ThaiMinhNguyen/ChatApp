@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_study/custom/loading_overlay.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../common/gradient_box.dart';
 import '../../custom/underline_text_field.dart';
 
 class DetailProfileScreen extends StatefulWidget {
@@ -22,19 +23,7 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.3,
-            width: double.infinity,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF4356B4), Color(0xFF3DCFCF)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ),
+          GradientBox(),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.only(right: 10),

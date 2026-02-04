@@ -44,11 +44,15 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
               controller: _controller,
               focusNode: _focusNode,
               hintText: widget.hintText ?? 'Search...',
-              leading: const Icon(Icons.search),
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Image.asset('assets/icons/ic_search.png', height: 18,),
+              ),
               onTap: () {
                 _focusNode.requestFocus();
               },
               onChanged: widget.onChanged,
+              backgroundColor: WidgetStatePropertyAll(Color(0xffFFFFFF)),
             ),
           ),
         ),
