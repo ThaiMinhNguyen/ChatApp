@@ -2,7 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../custom/underline_text_field.dart';
+import '../../custom/underline_text_field.dart';
 
 class RegisterScreen extends StatelessWidget {
   final TextEditingController nameController = TextEditingController();

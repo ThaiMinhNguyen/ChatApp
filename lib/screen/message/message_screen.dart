@@ -3,8 +3,8 @@ import 'package:flutter_study/custom/custom_badge.dart';
 import 'package:flutter_study/custom/custom_circular_avatar.dart';
 import 'package:go_router/go_router.dart';
 
-import '../constant/app_constant.dart';
-import '../custom/custom_searchbar.dart';
+import '../../constant/app_constant.dart';
+import '../../custom/custom_searchbar.dart';
 
 class MessageScreen extends StatelessWidget {
 

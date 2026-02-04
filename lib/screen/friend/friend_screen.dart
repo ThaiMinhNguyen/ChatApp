@@ -1,11 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_study/screen/friend/tab/friend_list_tab.dart';
+import 'package:flutter_study/screen/friend/tab/friend_request_tab.dart';
 
-import '../constant/app_constant.dart';
-import '../custom/custom_searchbar.dart';
+import '../../constant/app_constant.dart';
+import '../../custom/custom_badge.dart';
+import '../../custom/custom_searchbar.dart';
+import '../../entity/user/people.dart';
+import '../../entity/user/user.dart';
 
 class FriendScreen extends StatelessWidget {
 
-  const FriendScreen({super.key});
+  final List<FriendListItem> items = [
+    const PeopleHeader('LỜI MỜI KẾT BẠN'),
+
+    ...List.generate(
+      5,
+          (index) => PersonItem(
+        People(
+          user: User(
+            uid: 'received_$index',
+            displayName: 'User Received $index',
+            isEmailVerified: true,
+          ),
+          isRequestReceived: true,
+        ),
+      ),
+    ),
+
+    const PeopleHeader('ĐÃ GỬI KẾT BẠN'),
+
+    ...List.generate(
+      5,
+          (index) => PersonItem(
+        People(
+          user: User(
+            uid: 'sent_$index',
+            displayName: 'User Sent $index',
+            isEmailVerified: true,
+          ),
+          isRequestSent: true,
+        ),
+      ),
+    ),
+  ];
+
+
+  FriendScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -44,15 +84,20 @@ class FriendScreen extends StatelessWidget {
                     tabs: [
                       Tab(text: 'BẠN BÈ'),
                       Tab(text: 'TẤT CẢ'),
-                      Tab(text: 'YÊU CẦU'),
+                      Row(
+                        children: [
+                          Tab(text: 'YÊU CẦU'),
+                          CustomBadgeLabel(labelText: '1'),
+                        ],
+                      ),
                     ],
                   ),
                   Expanded(
                     child: TabBarView(
                       children: [
-                        Center(child: Text('Tab 1')),
-                        Center(child: Text('Tab 2')),
-                        Center(child: Text('Tab 3')),
+                        Center(child: FriendListTab()),
+                        Center(child: FriendListTab()),
+                        Center(child: FriendRequestTab(items: items,)),
                       ],
                     ),
                   ),
@@ -65,3 +110,12 @@ class FriendScreen extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
+
+

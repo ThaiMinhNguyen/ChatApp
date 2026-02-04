@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_study/screen/detail_profile_screen.dart';
-import 'package:flutter_study/screen/login_screen.dart';
-import 'package:flutter_study/screen/register_screen.dart';
+import 'package:flutter_study/screen/profile/detail_profile_screen.dart';
+import 'package:flutter_study/screen/login/login_screen.dart';
+import 'package:flutter_study/screen/login/register_screen.dart';
 import 'package:go_router/go_router.dart';
 
 import '../constant/app_constant.dart';
-import '../screen/chat_screen.dart';
-import '../screen/friend_screen.dart';
+import '../screen/message/chat_detail/chat_screen.dart';
+import '../screen/friend/friend_screen.dart';
 import '../screen/main_scaffold.dart';
-import '../screen/message_screen.dart';
-import '../screen/profile_screen.dart';
+import '../screen/message/message_screen.dart';
+import '../screen/profile/profile_screen.dart';
 
 final _mainShellNavKey = GlobalKey<NavigatorState>();
 
@@ -31,7 +31,7 @@ final router = GoRouter(
           GoRoute(
             path: '/friends',
             pageBuilder: (context, state) =>
-            const NoTransitionPage(child: FriendScreen()),
+            NoTransitionPage(child: FriendScreen()),
           ),
           GoRoute(
             path: '/profile',

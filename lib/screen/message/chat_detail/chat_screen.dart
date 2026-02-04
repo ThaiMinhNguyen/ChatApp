@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_study/util/image_picker_helper.dart';
 import 'package:go_router/go_router.dart';
 
-import '../entity/date_header.dart';
-import '../entity/message.dart';
+import '../../../entity/message/date_header.dart';
+import '../../../entity/message/message.dart';
+import '../../../entity/message/message_content.dart';
+import 'item/date_container.dart';
+import 'item/message_container.dart';
 
 class ChatScreen extends StatelessWidget {
   final String? chatId;
 
-  final List<Object> messages = List.generate(30, (index) {
-    final List<Object> items = [];
+  final List<Message> messages = List.generate(30, (index) {
+    final List<Message> items = [];
 
     if (index % 5 == 0) {
       items.add(
@@ -18,7 +21,7 @@ class ChatScreen extends StatelessWidget {
     }
 
     items.add(
-      Message(
+      MessageContent(
         id: 'msg_$index',
         text: 'Message numberaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa $index',
         isSentByMe: index % 3 == 0,
@@ -92,14 +95,14 @@ class ChatScreen extends StatelessWidget {
                     var shouldShowTimestamp = false;
                     if (item is DateHeader) {
                       return DateContainer(date: item.date);
-                    } else if (item is Message) {
-                      if(nextItem is! Message){
+                    } else if (item is MessageContent) {
+                      if(nextItem is! MessageContent){
                         shouldShowTimestamp = true;
                       }
-                      if(prevItem is! Message || (prevItem.isSentByMe == true && item.isSentByMe == false)){
+                      if(prevItem is! MessageContent || (prevItem.isSentByMe == true && item.isSentByMe == false)){
                           shouldShowAvatar = true;
                       }
-                      if(nextItem is Message){
+                      if(nextItem is MessageContent){
                         if(nextItem.isSentByMe != item.isSentByMe){
                           shouldShowTimestamp = true;
                         }
@@ -166,95 +169,5 @@ class ChatScreen extends StatelessWidget {
   }
 }
 
-class MessageContainer extends StatelessWidget {
-  final Message message;
-  final bool shouldShowAvatar;
-  final bool shouldShowTimestamp;
 
-  const MessageContainer({
-    super.key,
-    required this.message,
-    this.shouldShowAvatar = true,
-    this.shouldShowTimestamp = true,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: message.isSentByMe
-          ? MainAxisAlignment.end
-          : MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (!message.isSentByMe)
-          SizedBox(
-            width: 32,
-            child: shouldShowAvatar
-                ? Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: CircleAvatar(
-                radius: 12,
-                backgroundImage:
-                NetworkImage('https://i.pravatar.cc/150?img=3'),
-              ),
-            )
-                : null,
-          ),
-        Column(
-          crossAxisAlignment: message.isSentByMe
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
-          children: [
-            Container(
-              margin: EdgeInsets.only(bottom: 4),
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: message.isSentByMe ? Color(0xff4356B4) : Colors.grey[300],
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.7,
-                ),
-                child: Text(
-                  softWrap: true,
-                  message.text,
-                  style: TextStyle(
-                    color: message.isSentByMe ? Colors.white : Colors.black,
-                  ),
-                ),
-              ),
-            ),
-            if(shouldShowTimestamp)
-              Text(
-              '10:05',
-              style: TextStyle(fontSize: 12, color: Color(0xff999999)),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class DateContainer extends StatelessWidget {
-  final String date;
-
-  const DateContainer({super.key, required this.date});
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.center,
-      child: Container(
-        margin: EdgeInsets.symmetric(vertical: 10),
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.grey[300],
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Text(date, style: TextStyle(fontSize: 14)),
-      ),
-    );
-  }
-}

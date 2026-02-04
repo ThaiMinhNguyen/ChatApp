@@ -1,13 +1,13 @@
-import 'package:equatable/equatable.dart';
+import 'message.dart';
 
-class Message extends Equatable {
+class MessageContent extends Message {
   final String id;
   final String text;
   final bool isSentByMe;
   final DateTime createdAt;
   final MessageType type;
 
-  const Message({
+  const MessageContent({
     required this.id,
     required this.text,
     required this.isSentByMe,

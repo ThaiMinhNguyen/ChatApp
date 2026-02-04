@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_study/custom/loading_overlay.dart';
 import 'package:go_router/go_router.dart';
 
-import '../custom/underline_text_field.dart';
+import '../../custom/underline_text_field.dart';
 
 class DetailProfileScreen extends StatefulWidget {
   const DetailProfileScreen({super.key});
